@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS leads (
+  id SERIAL PRIMARY KEY,
+  full_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  phone VARCHAR(50) NOT NULL,
+  vehicle_make VARCHAR(100),
+  vehicle_model VARCHAR(100),
+  vehicle_year INTEGER,
+  vin_number VARCHAR(17),
+  coverage_type VARCHAR(50),
+  has_current_insurance BOOLEAN DEFAULT FALSE,
+  coverage_start_date DATE,
+  notes TEXT,
+  source VARCHAR(100) DEFAULT 'web_quote_form',
+  sync_status VARCHAR(50) DEFAULT 'pending',
+  erpnext_lead_id VARCHAR(100),
+  sync_error TEXT,
+  synced_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
