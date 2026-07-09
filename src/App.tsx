@@ -17,9 +17,10 @@ import {
   ShieldCheck,
   Star,
   Users,
+  X,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Controller,
   type FieldErrors,
@@ -544,7 +545,7 @@ function LandingHeader() {
   )
 }
 
-function HeroSection() {
+function HeroSection({ onQuoteClick }: { onQuoteClick: () => void }) {
   return (
     <section className="px-4 pb-8 pt-12 sm:px-6 sm:pb-10 sm:pt-16 lg:pb-12 lg:pt-20">
       <div className="mx-auto max-w-6xl text-center">
@@ -585,6 +586,14 @@ function HeroSection() {
             </a>
           ))}
         </div>
+        <button
+          className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-4 font-heading text-base font-extrabold text-white shadow-xl shadow-blue-600/20 transition hover:bg-blue-700 sm:w-auto"
+          onClick={onQuoteClick}
+          type="button"
+        >
+          Get a Quote
+          <ChevronRight className="h-5 w-5" />
+        </button>
       </div>
     </section>
   )
@@ -662,7 +671,7 @@ function TestimonialsSection() {
   )
 }
 
-function Footer() {
+function Footer({ onQuoteClick }: { onQuoteClick: () => void }) {
   return (
     <footer className="bg-[var(--primary-blue)] px-4 py-10 text-blue-100 sm:px-6">
       <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-4">
@@ -682,7 +691,11 @@ function Footer() {
         <div>
           <h3 className="font-heading font-bold text-white">Quick Links</h3>
           <ul className="mt-4 space-y-3 text-sm">
-            <li><a className="hover:text-white" href="#quote">Get a Quote</a></li>
+            <li>
+              <button className="text-left hover:text-white" onClick={onQuoteClick} type="button">
+                Get a Quote
+              </button>
+            </li>
             <li><a className="hover:text-white" href="#why-choose-us">About Us</a></li>
             <li><a className="hover:text-white" href="tel:+13023225515">Claims</a></li>
             <li><a className="hover:text-white" href="mailto:gis@dfgbusiness.com">FAQs</a></li>
@@ -713,6 +726,11 @@ export default function App() {
   const [incidentRows, setIncidentRows] = useState(1)
   const [submitError, setSubmitError] = useState('')
   const [submittedName, setSubmittedName] = useState('')
+  const [showQuoteOverlay, setShowQuoteOverlay] = useState(false)
+  const [showThankYouBanner, setShowThankYouBanner] = useState(false)
+  const formTopRef = useRef<HTMLDivElement | null>(null)
+  const overlayScrollRef = useRef<HTMLElement | null>(null)
+  const previousStepRef = useRef(step)
 
   const years = useMemo(() => {
     const current = new Date().getFullYear() + 1
@@ -751,6 +769,49 @@ export default function App() {
   const values = watch()
   const notes = watch('notes') || ''
 
+  useEffect(() => {
+    if (!showQuoteOverlay) {
+      return
+    }
+
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+    }
+  }, [showQuoteOverlay])
+
+  useEffect(() => {
+    if (previousStepRef.current === step) {
+      return
+    }
+
+    previousStepRef.current = step
+
+    if (window.matchMedia('(min-width: 768px)').matches) {
+      formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+
+    overlayScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [step])
+
+  function handleQuoteClick() {
+    setShowThankYouBanner(false)
+
+    if (window.matchMedia('(min-width: 768px)').matches) {
+      formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+
+    setShowQuoteOverlay(true)
+  }
+
+  function closeQuoteOverlay() {
+    setShowQuoteOverlay(false)
+  }
+
   async function nextStep() {
     const valid = await trigger(stepFields[step])
     if (valid) {
@@ -784,53 +845,60 @@ export default function App() {
   async function submitWithErrorHandling(data: LeadFormData) {
     try {
       await onSubmit(data)
+      setShowThankYouBanner(true)
+      setShowQuoteOverlay(false)
+      window.setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Unable to submit quote request')
     }
   }
 
-  if (isSubmitSuccessful && !submitError) {
-    return (
-      <main className="flex min-h-screen items-center justify-center p-4">
-        <motion.section
-          animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl"
-          initial={{ opacity: 0, scale: 0.92 }}
-          transition={{ duration: 0.35 }}
-        >
-          <motion.div
-            animate={{ scale: 1 }}
-            className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500 text-white"
-            initial={{ scale: 0 }}
-            transition={{ delay: 0.1, type: 'spring', stiffness: 180 }}
-          >
-            <CheckCircle2 className="h-11 w-11" />
-          </motion.div>
-          <h1 className="font-heading mt-6 text-3xl font-bold text-slate-900">
-            Thank you, {submittedName || 'friend'}!
-          </h1>
-          <p className="mt-3 text-slate-600">We'll be in touch within 24 hours.</p>
-          <a
-            className="mt-6 inline-flex items-center gap-2 font-semibold text-blue-600 hover:text-blue-700"
-            href="/"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Return home
-          </a>
-        </motion.section>
-      </main>
-    )
-  }
-
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen pb-24 md:pb-0">
       <LandingHeader />
-      <HeroSection />
-      <section className="px-4 pb-4 sm:px-6" id="quote">
+      {showThankYouBanner && !submitError ? (
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-auto mt-5 max-w-6xl px-4 sm:px-6"
+          initial={{ opacity: 0, y: -12 }}
+        >
+          <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm">
+            <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0" />
+            <div>
+              <p className="font-heading text-lg font-extrabold">Thank you, {submittedName || 'friend'}!</p>
+              <p className="mt-1 text-sm font-medium">Your quote request was submitted. We'll be in touch within 24 hours.</p>
+            </div>
+          </div>
+        </motion.div>
+      ) : null}
+      <HeroSection onQuoteClick={handleQuoteClick} />
+      <section
+        className={`${
+          showQuoteOverlay
+            ? 'fixed inset-0 z-50 overflow-y-auto bg-slate-950/50 px-3 py-3 backdrop-blur-sm'
+            : 'hidden px-4 pb-4'
+        } md:static md:block md:overflow-visible md:bg-transparent md:px-6 md:pb-4 md:pt-0 md:backdrop-blur-0`}
+        id="quote"
+        ref={overlayScrollRef}
+      >
+        {showQuoteOverlay ? (
+          <div className="sticky top-0 z-10 mb-3 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-lg md:hidden">
+            <BrandMark compact />
+            <button
+              aria-label="Close quote form"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700"
+              onClick={closeQuoteOverlay}
+              type="button"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        ) : null}
         <motion.div
           animate={{ opacity: 1, y: 0 }}
           className="mx-auto max-w-6xl"
           initial={{ opacity: 0, y: 24 }}
+          ref={formTopRef}
           transition={{ duration: 0.45 }}
         >
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
@@ -1206,7 +1274,19 @@ export default function App() {
         <WhyChooseSection />
       </div>
       <TestimonialsSection />
-      <Footer />
+      <Footer onQuoteClick={handleQuoteClick} />
+      {!showQuoteOverlay ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-blue-100 bg-white/95 p-3 shadow-2xl backdrop-blur md:hidden">
+          <button
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-4 font-heading font-extrabold text-white shadow-lg shadow-blue-600/25"
+            onClick={handleQuoteClick}
+            type="button"
+          >
+            Get a Quote
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+      ) : null}
     </main>
   )
 }
