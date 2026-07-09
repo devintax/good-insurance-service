@@ -1,0 +1,21 @@
+FROM node:20-alpine
+
+WORKDIR /app
+ENV CI=true
+
+# Install dependencies
+COPY package.json pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install
+
+# Copy source
+COPY . .
+
+RUN node -e "require('fs').rmSync('node_modules/.vite-temp',{recursive:true,force:true})" \
+  && pnpm exec tsc -b \
+  && pnpm exec vite build
+
+# Expose port
+EXPOSE 3005
+
+# Start server
+CMD ["node", "server.js"]

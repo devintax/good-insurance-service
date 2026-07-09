@@ -1,0 +1,44 @@
+name: Deploy Local Tunnel
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Local Cloudflared Host
+    runs-on:
+      - self-hosted
+      - windows
+      - gia
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy Docker compose stack
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $repo = "C:\Users\Administrator.DFGWORLD\Documents\DevOps\good-insurance-leads"
+          $envFile = "C:\Users\Administrator.DFGWORLD\Documents\DevOps\.env"
+
+          if (!(Test-Path $repo)) {
+            throw "Deployment directory not found: $repo"
+          }
+
+          Set-Location $repo
+          git fetch origin main
+          git reset --hard origin/main
+
+          docker compose --env-file $envFile -f docker-compose.yml up -d --build good-insurance-leads cloudflared-leads
+
+      - name: Verify public origin locally
+        shell: powershell
+        run: |
+          $health = Invoke-RestMethod -Uri "http://127.0.0.1:8480/api/health"
+          if ($health.status -ne "ok") {
+            throw "GIA health check failed: $($health | ConvertTo-Json -Compress)"
+          }

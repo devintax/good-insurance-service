@@ -1,0 +1,13 @@
+{
+  "name": "good-insurance-leads-api",
+  "version": "1.0.0",
+  "description": "API for Good Insurance Agency leads",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.cjs",
+    "deploy": "node deploy-api.cjs"
+  },
+  "dependencies": {
+    "pg": "^8.20.0"
+  }
+}

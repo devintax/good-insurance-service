@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - "agent/**"
+  pull_request:
+
+jobs:
+  build:
+    name: Build and Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend and server bundle
+        run: pnpm run build
+
+      - name: Check server syntax
+        run: node --check server.js
+
+      - name: Check helper scripts
+        run: |
+          node --check sync-leads.js
+          node --check test-erp.js
+
+      - name: Build Docker image
+        run: docker build -f Dockerfile.single -t good-insurance-service:${{ github.sha }} .

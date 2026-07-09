@@ -1,0 +1,50 @@
+services:
+  good-insurance-leads:
+    build:
+      context: .
+      dockerfile: Dockerfile.single
+    container_name: good-insurance-leads-app
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+      - "8480:3005"
+    environment:
+      - NODE_ENV=production
+      - PORT=3005
+      - ALLOWED_ORIGIN=https://gis.dfgworld.net
+      - ADMIN_API_KEY=${ADMIN_API_KEY:-generate-a-strong-key-here}
+      - PG_HOST=postgres
+      - PG_PORT=5432
+      - PG_USER=postgres
+      - PG_PASSWORD=${PG_PASSWORD}
+      - PG_DATABASE=insforge
+      - ERPNEXT_URL=${ERPNEXT_URL:-https://erpnext.dfgworld.net}
+      - ERPNEXT_API_KEY=${ERPNEXT_API_KEY}
+      - ERPNEXT_API_SECRET=${ERPNEXT_API_SECRET}
+      - ERPNEXT_LEAD_OWNER=${ERPNEXT_LEAD_OWNER:-}
+      - VITE_API_URL=
+    networks:
+      - erpnext-network
+      - insforge-network
+
+  cloudflared-leads:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-leads
+    restart: unless-stopped
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - ../cloudflared/config-leads.yml:/etc/cloudflared/config.yml:ro
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN_LEADS}
+    networks:
+      - erpnext-network
+    stdin_open: true
+    tty: true
+
+networks:
+  erpnext-network:
+    name: devops_erpnext-network
+    external: true
+  insforge-network:
+    name: docker-compose_insforge-network
+    external: true
