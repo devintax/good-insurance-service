@@ -1,13 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   AlertCircle,
+  Award,
+  BadgeCheck,
+  Car,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  FileText,
+  Clock,
+  Heart,
   Loader2,
+  Mail,
+  MessageCircle,
+  Phone,
   Plus,
   ShieldCheck,
+  Star,
+  Users,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
@@ -75,6 +84,65 @@ const states = [
 ]
 
 const stepLabels = ['Personal', 'Drivers', 'Insurance', 'Vehicles', 'History', 'Finish']
+
+const stats = [
+  { icon: Star, value: '4.9/5', label: 'Customer Rating', color: 'text-amber-500' },
+  { icon: Clock, value: '15+ Years', label: 'Experience', color: 'text-blue-600' },
+  { icon: Users, value: '5,000+', label: 'Happy Customers', color: 'text-teal-600' },
+  { icon: Award, value: '24/7', label: 'Support', color: 'text-purple-600' },
+]
+
+const contactActions = [
+  { icon: Phone, label: 'Call Us', value: '(302) 322-5515', href: 'tel:+13023225515', tone: 'border-blue-100 bg-blue-50/80 text-blue-700' },
+  { icon: MessageCircle, label: 'Text Us', value: '(302) 648-7858', href: 'sms:+13026487858', tone: 'border-teal-100 bg-teal-50/80 text-teal-700' },
+  { icon: MessageCircle, label: 'WhatsApp', value: '(302) 522-6002', href: 'https://wa.me/13025226002', tone: 'border-emerald-100 bg-emerald-50/80 text-emerald-700' },
+  { icon: Mail, label: 'Email', value: 'gis@dfgbusiness.com', href: 'mailto:gis@dfgbusiness.com', tone: 'border-purple-100 bg-purple-50/80 text-purple-700' },
+]
+
+const trustItems = [
+  { icon: ShieldCheck, label: 'Secure & Private' },
+  { icon: CheckCircle2, label: 'No Obligation' },
+  { icon: Clock, label: '24hr Response' },
+]
+
+const valueCards = [
+  {
+    icon: Car,
+    title: 'All Vehicle Types',
+    text: 'Whether you drive a sedan, SUV, truck, or sports car, we have coverage options tailored to your vehicle.',
+  },
+  {
+    icon: Heart,
+    title: 'Personalized Service',
+    text: 'Our experienced agents take the time to understand your needs and find coverage that fits your life.',
+  },
+  {
+    icon: Award,
+    title: 'Best Price Guaranteed',
+    text: 'We shop multiple carriers to find competitive rates without sacrificing quality coverage.',
+  },
+]
+
+const testimonials = [
+  {
+    quote: 'Saved me over $400 a year! The process was so easy, and they found me better coverage than I had before.',
+    name: 'Michael R.',
+    location: 'New Castle, DE',
+    initials: 'M',
+  },
+  {
+    quote: "After my accident, they handled everything personally. I didn't have to stress about a single thing.",
+    name: 'Sarah T.',
+    location: 'Wilmington, DE',
+    initials: 'S',
+  },
+  {
+    quote: "Professional, friendly, and they actually listen. I've been with them for 5 years now and couldn't be happier.",
+    name: 'James L.',
+    location: 'Dover, DE',
+    initials: 'J',
+  },
+]
 
 const stepFields: Record<number, FieldPath<LeadFormData>[]> = {
   1: [
@@ -440,6 +508,204 @@ function ReviewSummary({ data }: { data: Partial<LeadFormData> }) {
   )
 }
 
+function BrandMark({ compact = false, dark = false }: { compact?: boolean; dark?: boolean }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--primary-blue)] text-white shadow-sm">
+        <ShieldCheck className="h-6 w-6" />
+      </div>
+      <div className={compact ? 'hidden sm:block' : ''}>
+        <p className={`font-heading text-base font-extrabold leading-tight sm:text-lg ${dark ? 'text-white' : 'text-slate-900'}`}>
+          Good Insurance Agency
+        </p>
+        <p className={`text-xs font-semibold ${dark ? 'text-blue-200' : 'text-slate-500'}`}>Trusted Auto Insurance</p>
+      </div>
+    </div>
+  )
+}
+
+function LandingHeader() {
+  return (
+    <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/95 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <a aria-label="Good Insurance Agency home" href="#">
+          <BrandMark />
+        </a>
+        <a
+          className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700 sm:text-base"
+          href="tel:+13023225515"
+        >
+          <Phone className="h-4 w-4" />
+          <span className="hidden sm:inline">(302) 322-5515</span>
+          <span className="sm:hidden">Call</span>
+        </a>
+      </div>
+    </header>
+  )
+}
+
+function HeroSection() {
+  return (
+    <section className="px-4 pb-8 pt-12 sm:px-6 sm:pb-10 sm:pt-16 lg:pb-12 lg:pt-20">
+      <div className="mx-auto max-w-6xl text-center">
+        <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-4 py-2 text-sm font-bold text-teal-700 ring-1 ring-teal-100">
+          <BadgeCheck className="h-4 w-4" />
+          Licensed & Certified
+        </span>
+        <h1 className="font-heading mx-auto mt-5 max-w-5xl text-4xl font-extrabold leading-tight text-slate-950 sm:text-5xl lg:text-6xl">
+          Get Your Free Auto Insurance Quote in Minutes
+        </h1>
+        <p className="mx-auto mt-5 max-w-4xl text-base leading-7 text-slate-600 sm:text-lg lg:text-xl">
+          Serving Delaware and surrounding areas. No obligation, no pressure, just honest coverage
+          that fits your budget.
+        </p>
+
+        <div className="mt-9 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:gap-6">
+          {stats.map(({ icon: Icon, value, label, color }) => (
+            <div className="rounded-xl bg-white/45 px-3 py-4 text-center sm:bg-transparent" key={label}>
+              <Icon className={`mx-auto h-6 w-6 ${color}`} />
+              <p className="mt-3 text-lg font-extrabold text-slate-900">{value}</p>
+              <p className="mt-1 text-xs font-semibold text-slate-500 sm:text-sm">{label}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:gap-5">
+          {contactActions.map(({ icon: Icon, label, value, href, tone }) => (
+            <a
+              className={`flex min-h-16 items-center gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${tone}`}
+              href={href}
+              key={label}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              <span>
+                <span className="block text-xs font-bold opacity-70">{label}</span>
+                <span className="block text-sm font-extrabold sm:text-base">{value}</span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function TrustBar() {
+  return (
+    <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-3 px-4 py-6 text-sm font-semibold text-slate-500 sm:flex-row sm:gap-8">
+      {trustItems.map(({ icon: Icon, label }) => (
+        <span className="inline-flex items-center gap-2" key={label}>
+          <Icon className="h-5 w-5 text-teal-500" />
+          {label}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function WhyChooseSection() {
+  return (
+    <section className="bg-white px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center">
+          <h2 className="font-heading text-3xl font-extrabold text-slate-950 sm:text-4xl">
+            Why Choose Good Insurance Agency?
+          </h2>
+          <p className="mt-3 text-slate-600">Serving Delaware with personalized auto insurance coverage</p>
+        </div>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {valueCards.map(({ icon: Icon, title, text }) => (
+            <article className="rounded-xl bg-slate-50 p-6 shadow-sm ring-1 ring-slate-100" key={title}>
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                <Icon className="h-6 w-6" />
+              </div>
+              <h3 className="mt-5 font-heading text-lg font-extrabold text-slate-900">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-600">{text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function TestimonialsSection() {
+  return (
+    <section className="bg-slate-50 px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-6xl">
+        <h2 className="font-heading text-center text-3xl font-extrabold text-slate-950 sm:text-4xl">
+          What Our Customers Say
+        </h2>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {testimonials.map((testimonial) => (
+            <article className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-100" key={testimonial.name}>
+              <div className="flex gap-1 text-amber-400" aria-label="Five star review">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Star className="h-4 w-4 fill-current" key={index} />
+                ))}
+              </div>
+              <p className="mt-4 text-sm italic leading-6 text-slate-700">"{testimonial.quote}"</p>
+              <div className="mt-5 flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-600">
+                  {testimonial.initials}
+                </span>
+                <span>
+                  <span className="block font-bold text-slate-900">{testimonial.name}</span>
+                  <span className="text-sm text-slate-500">{testimonial.location}</span>
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Footer() {
+  return (
+    <footer className="bg-[var(--primary-blue)] px-4 py-10 text-blue-100 sm:px-6">
+      <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-4">
+        <div>
+          <BrandMark dark />
+          <p className="mt-4 text-sm leading-6">Providing reliable auto insurance coverage to Delaware since 2009.</p>
+        </div>
+        <div>
+          <h3 className="font-heading font-bold text-white">Contact Us</h3>
+          <ul className="mt-4 space-y-3 text-sm">
+            <li>(302) 322-5515 (Main)</li>
+            <li>(302) 648-7858 (Text)</li>
+            <li>gis@dfgbusiness.com</li>
+            <li>622 E. Basin Rd, Ste A, New Castle DE 19720</li>
+          </ul>
+        </div>
+        <div>
+          <h3 className="font-heading font-bold text-white">Quick Links</h3>
+          <ul className="mt-4 space-y-3 text-sm">
+            <li><a className="hover:text-white" href="#quote">Get a Quote</a></li>
+            <li><a className="hover:text-white" href="#why-choose-us">About Us</a></li>
+            <li><a className="hover:text-white" href="tel:+13023225515">Claims</a></li>
+            <li><a className="hover:text-white" href="mailto:gis@dfgbusiness.com">FAQs</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 className="font-heading font-bold text-white">Legal</h3>
+          <ul className="mt-4 space-y-3 text-sm">
+            <li>Privacy Policy</li>
+            <li>Terms of Service</li>
+            <li>Licenses</li>
+            <li className="pt-3 text-blue-200">Fax: (302) 846-7881</li>
+          </ul>
+        </div>
+      </div>
+      <div className="mx-auto mt-8 max-w-6xl border-t border-white/10 pt-6 text-center text-xs text-blue-200">
+        <p>© 2026 Good Insurance Agency. All rights reserved. Licensed in Delaware.</p>
+        <p className="mt-2">Coverage availability varies by state. Not all applicants may qualify.</p>
+      </div>
+    </footer>
+  )
+}
+
 export default function App() {
   const [step, setStep] = useState(1)
   const [showVehicle2, setShowVehicle2] = useState(false)
@@ -557,36 +823,16 @@ export default function App() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-8">
-      <motion.div
-        animate={{ opacity: 1, y: 0 }}
-        className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-start"
-        initial={{ opacity: 0, y: 24 }}
-        transition={{ duration: 0.45 }}
-      >
-        <section className="pt-4 text-center lg:sticky lg:top-8 lg:text-left">
-          <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700">
-            <ShieldCheck className="h-4 w-4" />
-            Licensed Delaware auto insurance support
-          </span>
-          <h1 className="font-heading mt-5 text-4xl font-extrabold leading-tight text-slate-950 md:text-5xl">
-            Get your free auto insurance quote in minutes
-          </h1>
-          <p className="mt-5 text-lg leading-8 text-slate-600">
-            Complete the Good Insurance Agency intake form once, and our team will use it to match
-            you with practical coverage options.
-          </p>
-          <div className="mt-6 rounded-xl border border-blue-100 bg-white/70 p-4 text-left shadow-sm">
-            <div className="flex items-start gap-3">
-              <FileText className="mt-1 h-5 w-5 text-blue-600" />
-              <p className="text-sm leading-6 text-slate-600">
-                This form mirrors the agency intake sheet, including drivers, vehicles, current
-                insurance, and driving history.
-              </p>
-            </div>
-          </div>
-        </section>
-
+    <main className="min-h-screen">
+      <LandingHeader />
+      <HeroSection />
+      <section className="px-4 pb-4 sm:px-6" id="quote">
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-auto max-w-6xl"
+          initial={{ opacity: 0, y: 24 }}
+          transition={{ duration: 0.45 }}
+        >
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
           <div className="bg-[var(--primary-blue)] px-6 py-5 text-white">
             <h2 className="font-heading text-2xl font-bold">GIA Quote Intake</h2>
@@ -953,7 +1199,14 @@ export default function App() {
             </fieldset>
           </form>
         </section>
-      </motion.div>
+        </motion.div>
+      </section>
+      <TrustBar />
+      <div id="why-choose-us">
+        <WhyChooseSection />
+      </div>
+      <TestimonialsSection />
+      <Footer />
     </main>
   )
 }
