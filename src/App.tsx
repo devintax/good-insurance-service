@@ -517,7 +517,7 @@ function BrandMark({ compact = false, dark = false }: { compact?: boolean; dark?
       </div>
       <div className={compact ? 'hidden sm:block' : ''}>
         <p className={`font-heading text-base font-extrabold leading-tight sm:text-lg ${dark ? 'text-white' : 'text-slate-900'}`}>
-          Good Insurance Agency
+          Good Insurance Service
         </p>
         <p className={`text-xs font-semibold ${dark ? 'text-blue-200' : 'text-slate-500'}`}>Trusted Auto Insurance</p>
       </div>
@@ -529,7 +529,7 @@ function LandingHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <a aria-label="Good Insurance Agency home" href="#">
+        <a aria-label="Good Insurance Service home" href="#">
           <BrandMark />
         </a>
         <a
@@ -618,7 +618,7 @@ function WhyChooseSection() {
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
           <h2 className="font-heading text-3xl font-extrabold text-slate-950 sm:text-4xl">
-            Why Choose Good Insurance Agency?
+            Why Choose Good Insurance Service?
           </h2>
           <p className="mt-3 text-slate-600">Serving Delaware with personalized auto insurance coverage</p>
         </div>
@@ -712,7 +712,7 @@ function Footer({ onQuoteClick }: { onQuoteClick: () => void }) {
         </div>
       </div>
       <div className="mx-auto mt-8 max-w-6xl border-t border-white/10 pt-6 text-center text-xs text-blue-200">
-        <p>© 2026 Good Insurance Agency. All rights reserved. Licensed in Delaware.</p>
+        <p>© 2026 Good Insurance Service. All rights reserved. Licensed in Delaware.</p>
         <p className="mt-2">Coverage availability varies by state. Not all applicants may qualify.</p>
       </div>
     </footer>
@@ -903,7 +903,7 @@ export default function App() {
         >
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
           <div className="bg-[var(--primary-blue)] px-6 py-5 text-white">
-            <h2 className="font-heading text-2xl font-bold">GIA Quote Intake</h2>
+            <h2 className="font-heading text-2xl font-bold">GIS Quote Intake</h2>
             <p className="mt-1 text-sm text-blue-100">Step {step} of 6: {stepLabels[step - 1]}</p>
           </div>
 
