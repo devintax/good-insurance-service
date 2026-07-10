@@ -27,6 +27,7 @@ import {
   type FieldErrors,
   type FieldPath,
   type UseFormRegister,
+  useFieldArray,
   useForm,
 } from 'react-hook-form'
 import { LeadFormSchema, type LeadFormData } from './lib/schema'
@@ -209,12 +210,7 @@ const stepFields: Record<number, FieldPath<LeadFormData>[]> = {
   2: [
     'licensed_over_3yrs',
     'drivers_in_household',
-    'driver2_first_name',
-    'driver2_last_name',
-    'driver2_date_of_birth',
-    'driver2_drivers_license',
-    'driver2_excluded',
-    'driver2_defensive_driving',
+    'additional_drivers',
   ],
   3: [
     'has_current_insurance',
@@ -264,6 +260,18 @@ type InputProps = {
   maxLength?: number
 }
 
+function getFieldError(errors: FieldErrors<LeadFormData>, name: FieldPath<LeadFormData>) {
+  return name
+    .split('.')
+    .reduce<unknown>((current, part) => {
+      if (!current || typeof current !== 'object') {
+        return undefined
+      }
+
+      return (current as Record<string, unknown>)[part]
+    }, errors) as { message?: string } | undefined
+}
+
 function FieldError({ message }: { message?: string }) {
   return message ? <p className="input-error">{message}</p> : null
 }
@@ -279,7 +287,7 @@ function TextInput({
   rows,
   maxLength,
 }: InputProps) {
-  const error = errors[name]?.message as string | undefined
+  const error = getFieldError(errors, name)?.message
 
   return (
     <label className="focus-scale block transition duration-200">
@@ -323,7 +331,7 @@ function SelectInput({
   children: React.ReactNode
   required?: boolean
 }) {
-  const error = errors[name]?.message as string | undefined
+  const error = getFieldError(errors, name)?.message
 
   return (
     <label className="focus-scale block transition duration-200">
@@ -353,7 +361,7 @@ function BooleanRadio({
   yesLabel?: string
   noLabel?: string
 }) {
-  const error = errors[name]?.message as string | undefined
+  const error = getFieldError(errors, name)?.message
 
   return (
     <div>
@@ -403,7 +411,7 @@ function EnumRadio<T extends string>({
   errors: FieldErrors<LeadFormData>
   required?: boolean
 }) {
-  const error = errors[name]?.message as string | undefined
+  const error = getFieldError(errors, name)?.message
 
   return (
     <div>
@@ -537,6 +545,7 @@ function ReviewSummary({ data }: { data: Partial<LeadFormData> }) {
             row('Email', data.email),
             row('Home Phone', data.phone_home),
             row('Address', `${data.address || ''}, ${data.city || ''}, ${data.state || ''} ${data.zip || ''}`),
+            row('Additional Drivers', data.additional_drivers?.length || 0),
           ]}
         </section>
         <section>
@@ -825,6 +834,7 @@ export default function App() {
     defaultValues: {
       state: 'DE',
       drivers_in_household: 1,
+      additional_drivers: [],
       phone_cell_work: '',
       date_of_inquiry: new Date().toISOString(),
       veh1_vin: '',
@@ -842,8 +852,29 @@ export default function App() {
     },
   })
 
+  const { append, fields: additionalDriverFields, remove } = useFieldArray({
+    control,
+    name: 'additional_drivers',
+  })
+
   const values = watch()
   const notes = watch('notes') || ''
+  const householdDriverCount = Number.isFinite(Number(values.drivers_in_household))
+    ? Math.max(Number(values.drivers_in_household), 1)
+    : 1
+  const additionalDriversNeeded = Math.max(householdDriverCount - 1, 0)
+  const additionalDriversAdded = values.additional_drivers?.length || 0
+  const additionalDriversError = getFieldError(errors, 'additional_drivers')?.message
+
+  useEffect(() => {
+    if (additionalDriverFields.length <= additionalDriversNeeded) {
+      return
+    }
+
+    for (let index = additionalDriverFields.length - 1; index >= additionalDriversNeeded; index -= 1) {
+      remove(index)
+    }
+  }, [additionalDriverFields.length, additionalDriversNeeded, remove])
 
   useEffect(() => {
     if (!showQuoteOverlay) {
@@ -903,16 +934,26 @@ export default function App() {
 
   async function onSubmit(data: LeadFormData) {
     setSubmitError('')
+    const [firstAdditionalDriver] = data.additional_drivers || []
+    const requestBody = {
+      ...data,
+      driver2_first_name: firstAdditionalDriver?.first_name || '',
+      driver2_last_name: firstAdditionalDriver?.last_name || '',
+      driver2_date_of_birth: firstAdditionalDriver?.date_of_birth || '',
+      driver2_drivers_license: firstAdditionalDriver?.drivers_license || '',
+      driver2_excluded: firstAdditionalDriver?.excluded ?? false,
+      driver2_defensive_driving: firstAdditionalDriver?.defensive_driving || 'none',
+    }
 
     const response = await fetch(`${API_URL}/api/leads`, {
-      body: JSON.stringify(data),
+      body: JSON.stringify(requestBody),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
     })
 
-    const payload = await response.json().catch(() => null)
-    if (!response.ok || !payload?.success) {
-      throw new Error(payload?.error || 'Unable to submit quote request')
+    const responsePayload = await response.json().catch(() => null)
+    if (!response.ok || !responsePayload?.success) {
+      throw new Error(responsePayload?.error || 'Unable to submit quote request')
     }
 
     setSubmittedName(data.first_name)
@@ -1115,54 +1156,118 @@ export default function App() {
                     label="Licensed for more than 3 years?"
                     name="licensed_over_3yrs"
                   />
-                  <TextInput
-                    errors={errors}
-                    label="How many drivers in your household?"
-                    name="drivers_in_household"
-                    register={register}
-                    required
-                    type="number"
-                  />
-                  {(values.drivers_in_household || 0) >= 2 ? (
-                    <section className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <h3 className="font-heading text-lg font-bold text-slate-900">Additional Driver</h3>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <TextInput errors={errors} label="Driver 2 First Name" name="driver2_first_name" register={register} />
-                        <TextInput errors={errors} label="Driver 2 Last Name" name="driver2_last_name" register={register} />
-                        <TextInput
-                          errors={errors}
-                          label="Driver 2 Date of Birth"
-                          name="driver2_date_of_birth"
-                          register={register}
-                          type="date"
-                        />
-                        <TextInput
-                          errors={errors}
-                          label="Driver 2 Driver License #"
-                          name="driver2_drivers_license"
-                          register={register}
-                        />
+                  <label className="focus-scale block transition duration-200">
+                    <span className="form-label">
+                      How many drivers in your household? <span className="text-red-500">*</span>
+                    </span>
+                    <input
+                      {...register('drivers_in_household', { valueAsNumber: true })}
+                      className={`input-field ${getFieldError(errors, 'drivers_in_household') ? 'error' : ''}`}
+                      min={1}
+                      step={1}
+                      type="number"
+                    />
+                    <FieldError message={getFieldError(errors, 'drivers_in_household')?.message} />
+                  </label>
+                  <section className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="font-heading text-lg font-bold text-slate-900">Additional Drivers</h3>
+                        <p className="mt-1 text-sm font-medium text-slate-600">
+                          {additionalDriversAdded} of {additionalDriversNeeded} additional driver{additionalDriversNeeded === 1 ? '' : 's'} added
+                        </p>
                       </div>
-                      <BooleanRadio
-                        control={control}
-                        errors={errors}
-                        label="Exclude this driver from policy?"
-                        name="driver2_excluded"
-                      />
-                      <EnumRadio
-                        control={control}
-                        errors={errors}
-                        label="Defensive driving course?"
-                        name="driver2_defensive_driving"
-                        options={[
-                          { label: 'None', value: 'none' },
-                          { label: 'Basic', value: 'basic' },
-                          { label: 'Advanced', value: 'advanced' },
-                        ]}
-                        required={false}
-                      />
-                    </section>
-                  ) : null}
+                      <button
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-blue-700 ring-1 ring-blue-200 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        disabled={additionalDriversAdded >= additionalDriversNeeded}
+                        onClick={() =>
+                          append({
+                            first_name: '',
+                            last_name: '',
+                            date_of_birth: '',
+                            drivers_license: '',
+                            excluded: false,
+                            defensive_driving: 'none',
+                          })
+                        }
+                        type="button"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Another Driver to Policy
+                      </button>
+                    </div>
+                    {additionalDriversNeeded === 0 ? (
+                      <p className="rounded-lg bg-white px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-100">
+                        Increase the household driver count above 1 to add additional drivers.
+                      </p>
+                    ) : null}
+                    <FieldError message={additionalDriversError} />
+                    {additionalDriverFields.map((field, index) => (
+                      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm" key={field.id}>
+                        <div className="flex items-center justify-between gap-3">
+                          <h4 className="font-heading text-base font-bold text-slate-900">Driver {index + 2}</h4>
+                          <button
+                            aria-label={`Remove Driver ${index + 2}`}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-50"
+                            onClick={() => remove(index)}
+                            type="button"
+                          >
+                            <X className="h-4 w-4" />
+                            Remove
+                          </button>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <TextInput
+                            errors={errors}
+                            label="First Name"
+                            name={`additional_drivers.${index}.first_name` as FieldPath<LeadFormData>}
+                            register={register}
+                            required
+                          />
+                          <TextInput
+                            errors={errors}
+                            label="Last Name"
+                            name={`additional_drivers.${index}.last_name` as FieldPath<LeadFormData>}
+                            register={register}
+                            required
+                          />
+                          <TextInput
+                            errors={errors}
+                            label="Date of Birth"
+                            name={`additional_drivers.${index}.date_of_birth` as FieldPath<LeadFormData>}
+                            register={register}
+                            required
+                            type="date"
+                          />
+                          <TextInput
+                            errors={errors}
+                            label="Driver License #"
+                            name={`additional_drivers.${index}.drivers_license` as FieldPath<LeadFormData>}
+                            register={register}
+                            required
+                          />
+                        </div>
+                        <BooleanRadio
+                          control={control}
+                          errors={errors}
+                          label="Exclude this driver from policy?"
+                          name={`additional_drivers.${index}.excluded` as FieldPath<LeadFormData>}
+                        />
+                        <EnumRadio
+                          control={control}
+                          errors={errors}
+                          label="Defensive driving course?"
+                          name={`additional_drivers.${index}.defensive_driving` as FieldPath<LeadFormData>}
+                          options={[
+                            { label: 'None', value: 'none' },
+                            { label: 'Basic', value: 'basic' },
+                            { label: 'Advanced', value: 'advanced' },
+                          ]}
+                          required={false}
+                        />
+                      </section>
+                    ))}
+                  </section>
                 </motion.div>
               ) : null}
 
