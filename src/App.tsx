@@ -756,6 +756,128 @@ function FAQSection() {
   )
 }
 
+function SuccessScreen({
+  email,
+  firstName,
+  isOverlay,
+  onClose,
+  onSubmitAnother,
+}: {
+  email: string
+  firstName: string
+  isOverlay: boolean
+  onClose: () => void
+  onSubmitAnother: () => void
+}) {
+  const displayName = firstName || 'friend'
+
+  return (
+    <motion.div
+      animate={{ opacity: 1, y: 0 }}
+      className="px-5 py-10 text-center sm:px-8 sm:py-14"
+      initial={{ opacity: 0, y: 18 }}
+      transition={{ duration: 0.35 }}
+    >
+      <div className="relative mx-auto flex h-24 w-24 items-center justify-center">
+        <span className="absolute h-24 w-24 animate-ping rounded-full bg-emerald-200 opacity-40" />
+        <motion.svg className="relative h-24 w-24" fill="none" viewBox="0 0 96 96">
+          <motion.circle
+            animate={{ pathLength: 1 }}
+            className="text-emerald-500"
+            cx="48"
+            cy="48"
+            initial={{ pathLength: 0 }}
+            r="40"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeWidth="8"
+            transition={{ duration: 0.55, ease: 'easeOut' }}
+          />
+          <motion.path
+            animate={{ pathLength: 1 }}
+            className="text-emerald-600"
+            d="M30 49.5 42.5 62 68 36"
+            initial={{ pathLength: 0 }}
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="8"
+            transition={{ delay: 0.35, duration: 0.45, ease: 'easeOut' }}
+          />
+        </motion.svg>
+      </div>
+
+      <h2 className="font-heading mt-6 text-3xl font-extrabold text-slate-950 sm:text-4xl">Thank You, {displayName}!</h2>
+      <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">
+        Your quote request has been fully submitted to Good Insurance Service.
+      </p>
+
+      <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-left shadow-sm sm:p-6">
+        <h3 className="font-heading text-lg font-extrabold text-emerald-950">What happens next</h3>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          {[
+            {
+              icon: Mail,
+              title: 'Confirmation noted',
+              text: email ? `We have your request under ${email}.` : 'We have your quote request on file.',
+            },
+            {
+              icon: Phone,
+              title: '24hr follow-up',
+              text: 'A licensed Delaware broker will call within 24 hours.',
+            },
+            {
+              icon: Award,
+              title: 'Carrier shopping',
+              text: "We'll shop 10+ carriers with no obligation to buy.",
+            },
+          ].map(({ icon: Icon, title, text }) => (
+            <article className="rounded-xl bg-white p-4 ring-1 ring-emerald-100" key={title}>
+              <Icon className="h-6 w-6 text-emerald-600" />
+              <h4 className="mt-3 font-heading font-bold text-slate-900">{title}</h4>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="mx-auto mt-8 grid max-w-2xl gap-3 sm:grid-cols-2">
+        <a
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+          href="tel:+13023225515"
+        >
+          <Phone className="h-5 w-5" />
+          Call Us
+        </a>
+        <a
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-3 font-bold text-white shadow-lg shadow-teal-600/20 transition hover:bg-teal-700"
+          href="sms:+13026487858"
+        >
+          <MessageCircle className="h-5 w-5" />
+          Text Us
+        </a>
+      </div>
+
+      <button
+        className="mt-6 font-heading text-sm font-extrabold text-blue-700 underline-offset-4 hover:underline"
+        onClick={onSubmitAnother}
+        type="button"
+      >
+        Submit another quote request
+      </button>
+
+      {isOverlay ? (
+        <div className="mt-5 flex flex-col items-center gap-3">
+          <button className="text-sm font-bold text-slate-500 hover:text-slate-700" onClick={onClose} type="button">
+            Return to page now
+          </button>
+          <p className="text-xs font-semibold text-slate-400">Closing automatically in 5 seconds...</p>
+        </div>
+      ) : null}
+    </motion.div>
+  )
+}
+
 function Footer({ onQuoteClick }: { onQuoteClick: () => void }) {
   return (
     <footer className="bg-[var(--primary-blue)] px-4 py-10 text-blue-100 sm:px-6">
@@ -810,9 +932,10 @@ export default function App() {
   const [showVehicle3, setShowVehicle3] = useState(false)
   const [incidentRows, setIncidentRows] = useState(1)
   const [submitError, setSubmitError] = useState('')
+  const [submissionSuccess, setSubmissionSuccess] = useState(false)
   const [submittedName, setSubmittedName] = useState('')
+  const [submittedEmail, setSubmittedEmail] = useState('')
   const [showQuoteOverlay, setShowQuoteOverlay] = useState(false)
-  const [showThankYouBanner, setShowThankYouBanner] = useState(false)
   const formTopRef = useRef<HTMLDivElement | null>(null)
   const overlayScrollRef = useRef<HTMLElement | null>(null)
   const previousStepRef = useRef(step)
@@ -824,9 +947,10 @@ export default function App() {
 
   const {
     control,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
+    formState: { errors, isSubmitting },
     handleSubmit,
     register,
+    reset,
     trigger,
     watch,
   } = useForm<LeadFormData>({
@@ -904,9 +1028,19 @@ export default function App() {
     overlayScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
   }, [step])
 
-  function handleQuoteClick() {
-    setShowThankYouBanner(false)
+  useEffect(() => {
+    if (!submissionSuccess || !showQuoteOverlay) {
+      return
+    }
 
+    const timeout = window.setTimeout(() => {
+      resetQuoteForm({ closeOverlay: true })
+    }, 5000)
+
+    return () => window.clearTimeout(timeout)
+  }, [submissionSuccess, showQuoteOverlay])
+
+  function handleQuoteClick() {
     if (window.matchMedia('(min-width: 768px)').matches) {
       formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
@@ -916,7 +1050,50 @@ export default function App() {
   }
 
   function closeQuoteOverlay() {
+    if (submissionSuccess) {
+      resetQuoteForm({ closeOverlay: true })
+      return
+    }
+
     setShowQuoteOverlay(false)
+  }
+
+  function resetQuoteForm({ closeOverlay = false }: { closeOverlay?: boolean } = {}) {
+    reset({
+      state: 'DE',
+      drivers_in_household: 1,
+      additional_drivers: [],
+      phone_cell_work: '',
+      date_of_inquiry: new Date().toISOString(),
+      veh1_vin: '',
+      veh2_year: '',
+      veh2_make: '',
+      veh2_model: '',
+      veh2_vin: '',
+      veh2_body_type: '',
+      veh3_year: '',
+      veh3_make: '',
+      veh3_model: '',
+      veh3_vin: '',
+      veh3_body_type: '',
+      notes: '',
+    })
+    setStep(1)
+    setShowVehicle2(false)
+    setShowVehicle3(false)
+    setIncidentRows(1)
+    setSubmitError('')
+    setSubmissionSuccess(false)
+    setSubmittedName('')
+    setSubmittedEmail('')
+
+    if (closeOverlay) {
+      setShowQuoteOverlay(false)
+      window.setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)
+      return
+    }
+
+    window.setTimeout(() => formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
   }
 
   async function nextStep() {
@@ -957,14 +1134,22 @@ export default function App() {
     }
 
     setSubmittedName(data.first_name)
+    setSubmittedEmail(data.email)
   }
 
   async function submitWithErrorHandling(data: LeadFormData) {
     try {
       await onSubmit(data)
-      setShowThankYouBanner(true)
-      setShowQuoteOverlay(false)
-      window.setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)
+      setSubmissionSuccess(true)
+      setSubmitError('')
+      window.setTimeout(() => {
+        if (showQuoteOverlay) {
+          overlayScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+          return
+        }
+
+        formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 0)
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Unable to submit quote request')
     }
@@ -973,21 +1158,6 @@ export default function App() {
   return (
     <main className="min-h-screen pb-24 md:pb-0">
       <LandingHeader />
-      {showThankYouBanner && !submitError ? (
-        <motion.div
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-auto mt-5 max-w-6xl px-4 sm:px-6"
-          initial={{ opacity: 0, y: -12 }}
-        >
-          <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm">
-            <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0" />
-            <div>
-              <p className="font-heading text-lg font-extrabold">Thank you, {submittedName || 'friend'}!</p>
-              <p className="mt-1 text-sm font-medium">Your quote request was submitted. We'll be in touch within 24 hours.</p>
-            </div>
-          </div>
-        </motion.div>
-      ) : null}
       <HeroSection onQuoteClick={handleQuoteClick} />
       <section
         className={`${
@@ -1020,11 +1190,16 @@ export default function App() {
         >
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
           <div className="bg-[var(--primary-blue)] px-6 py-5 text-white">
-            <h2 className="font-heading text-2xl font-bold">GIS Quote Intake</h2>
-            <p className="mt-1 text-sm text-blue-100">Step {step} of 6: {stepLabels[step - 1]}</p>
+            <h2 className="font-heading text-2xl font-bold">
+              {submissionSuccess ? 'Quote Request Submitted' : 'GIS Quote Intake'}
+            </h2>
+            <p className="mt-1 text-sm text-blue-100">
+              {submissionSuccess ? 'Thank you for choosing Good Insurance Service' : `Step ${step} of 6: ${stepLabels[step - 1]}`}
+            </p>
           </div>
 
-          <div className="border-b border-slate-100 bg-slate-50 px-4 py-5 sm:px-6">
+          {!submissionSuccess ? (
+            <div className="border-b border-slate-100 bg-slate-50 px-4 py-5 sm:px-6">
             <div className="flex items-center justify-between">
               {stepLabels.map((label, index) => {
                 const number = index + 1
@@ -1048,8 +1223,18 @@ export default function App() {
                 )
               })}
             </div>
-          </div>
+            </div>
+          ) : null}
 
+          {submissionSuccess ? (
+            <SuccessScreen
+              email={submittedEmail}
+              firstName={submittedName}
+              isOverlay={showQuoteOverlay}
+              onClose={() => resetQuoteForm({ closeOverlay: true })}
+              onSubmitAnother={() => resetQuoteForm({ closeOverlay: showQuoteOverlay })}
+            />
+          ) : (
           <form onSubmit={handleSubmit(submitWithErrorHandling)}>
             <fieldset className="p-6" disabled={isSubmitting}>
               {step === 1 ? (
@@ -1441,12 +1626,13 @@ export default function App() {
                     type="submit"
                   >
                     {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    Submit Quote Request
+                    {isSubmitting ? 'Submitting your quote...' : 'Submit Quote Request'}
                   </button>
                 )}
               </div>
             </fieldset>
           </form>
+          )}
         </section>
         </motion.div>
       </section>
