@@ -1,0 +1,17 @@
+{
+  "name": "Good Insurance Service",
+  "short_name": "GIS",
+  "description": "Delaware auto insurance quote requests from Good Insurance Service.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eef8ff",
+  "theme_color": "#1f426b",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Clock,
   Heart,
+  HelpCircle,
   Loader2,
   Mail,
   MessageCircle,
@@ -142,6 +143,49 @@ const testimonials = [
     name: 'James L.',
     location: 'Dover, DE',
     initials: 'J',
+  },
+]
+
+const faqs = [
+  {
+    question: 'How do I get an auto insurance quote in Delaware?',
+    answer:
+      'Complete the quote form with your driver, vehicle, current insurance, and driving history details. A Delaware insurance specialist reviews your request and follows up with coverage options.',
+  },
+  {
+    question: 'What is the minimum car insurance required in Delaware?',
+    answer:
+      'Delaware drivers must carry state-required liability coverage and personal injury protection. We can help you compare options that meet Delaware requirements and fit your budget.',
+  },
+  {
+    question: 'Can you help with SR-22 insurance in Delaware?',
+    answer:
+      'Yes. If you need SR-22 or high-risk auto insurance help in Delaware, include your driving history in the quote form so our team can review available options.',
+  },
+  {
+    question: 'Do you serve New Castle, Wilmington, and Dover?',
+    answer:
+      'Yes. Good Insurance Service is located in New Castle and serves drivers throughout Delaware, including New Castle, Wilmington, Dover, Newark, and nearby communities.',
+  },
+  {
+    question: 'Can I get coverage for more than one vehicle?',
+    answer:
+      'Yes. The intake form supports multiple vehicles so we can review household coverage needs and look for practical multi-vehicle options.',
+  },
+  {
+    question: 'Do I need current insurance to request a quote?',
+    answer:
+      'No. You can request a quote whether you currently have insurance or need help starting a new policy.',
+  },
+  {
+    question: 'How quickly will someone contact me?',
+    answer:
+      'Most quote requests receive a follow-up within 24 hours during normal business operations.',
+  },
+  {
+    question: 'Is the quote request free?',
+    answer:
+      'Yes. There is no obligation to submit the form or review your Delaware auto insurance options.',
   },
 ]
 
@@ -671,6 +715,38 @@ function TestimonialsSection() {
   )
 }
 
+function FAQSection() {
+  return (
+    <section className="bg-white px-4 py-12 sm:px-6 sm:py-16" id="faq">
+      <div className="mx-auto max-w-4xl">
+        <div className="text-center">
+          <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 ring-1 ring-blue-100">
+            <HelpCircle className="h-4 w-4" />
+            Delaware Auto Insurance FAQ
+          </span>
+          <h2 className="font-heading mt-4 text-3xl font-extrabold text-slate-950 sm:text-4xl">
+            Questions Delaware Drivers Ask
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-slate-600">
+            Local answers for Delaware auto insurance quotes, coverage requirements, SR-22 help, and fast follow-up.
+          </p>
+        </div>
+        <div className="mt-10 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-slate-50/60">
+          {faqs.map((faq) => (
+            <details className="group p-5 open:bg-white sm:p-6" key={faq.question}>
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-4 font-heading text-lg font-extrabold text-slate-900">
+                <span>{faq.question}</span>
+                <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-blue-600 transition group-open:rotate-90" />
+              </summary>
+              <p className="mt-4 leading-7 text-slate-600">{faq.answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function Footer({ onQuoteClick }: { onQuoteClick: () => void }) {
   return (
     <footer className="bg-[var(--primary-blue)] px-4 py-10 text-blue-100 sm:px-6">
@@ -698,7 +774,7 @@ function Footer({ onQuoteClick }: { onQuoteClick: () => void }) {
             </li>
             <li><a className="hover:text-white" href="#why-choose-us">About Us</a></li>
             <li><a className="hover:text-white" href="tel:+13023225515">Claims</a></li>
-            <li><a className="hover:text-white" href="mailto:gis@dfgbusiness.com">FAQs</a></li>
+            <li><a className="hover:text-white" href="#faq">FAQs</a></li>
           </ul>
         </div>
         <div>
@@ -1274,6 +1350,7 @@ export default function App() {
         <WhyChooseSection />
       </div>
       <TestimonialsSection />
+      <FAQSection />
       <Footer onQuoteClick={handleQuoteClick} />
       {!showQuoteOverlay ? (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-blue-100 bg-white/95 p-3 shadow-2xl backdrop-blur md:hidden">
