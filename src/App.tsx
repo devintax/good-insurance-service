@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Loader2,
   Mail,
+  MapPin,
   MessageCircle,
   Phone,
   Plus,
@@ -164,9 +165,14 @@ const faqs = [
       'Yes. If you need SR-22 or high-risk auto insurance help in Delaware, include your driving history in the quote form so our team can review available options.',
   },
   {
-    question: 'Do you serve New Castle, Wilmington, and Dover?',
+    question: 'Do you serve all of Delaware?',
     answer:
-      'Yes. Good Insurance Service is located in New Castle and serves drivers throughout Delaware, including New Castle, Wilmington, Dover, Newark, and nearby communities.',
+      'Yes. Good Insurance Service is located in New Castle and serves drivers statewide, including New Castle County, Kent County, Sussex County, Wilmington, Dover, Newark, Middletown, and nearby communities.',
+  },
+  {
+    question: 'Can I compare liability and full coverage auto insurance in Delaware?',
+    answer:
+      'Yes. We can help Delaware drivers compare liability and full coverage options based on vehicle, driver, lien holder, and household details.',
   },
   {
     question: 'Can I get coverage for more than one vehicle?',
@@ -188,6 +194,21 @@ const faqs = [
     answer:
       'Yes. There is no obligation to submit the form or review your Delaware auto insurance options.',
   },
+]
+
+const coverageAreas = [
+  'New Castle County',
+  'Kent County',
+  'Sussex County',
+  'Wilmington',
+  'Dover',
+  'Newark',
+  'Middletown',
+  'Smyrna',
+  'Milford',
+  'Georgetown',
+  'Rehoboth Beach',
+  'Lewes',
 ]
 
 const stepFields: Record<number, FieldPath<LeadFormData>[]> = {
@@ -607,11 +628,11 @@ function HeroSection({ onQuoteClick }: { onQuoteClick: () => void }) {
           Licensed & Certified
         </span>
         <h1 className="font-heading mx-auto mt-5 max-w-5xl text-4xl font-extrabold leading-tight text-slate-950 sm:text-5xl lg:text-6xl">
-          Get Your Free Auto Insurance Quote in Minutes
+          Get Free Auto Insurance Quotes in Delaware
         </h1>
         <p className="mx-auto mt-5 max-w-4xl text-base leading-7 text-slate-600 sm:text-lg lg:text-xl">
-          Serving Delaware and surrounding areas. No obligation, no pressure, just honest coverage
-          that fits your budget.
+          Serving drivers across New Castle County, Kent County, Sussex County, and communities statewide.
+          No obligation, no pressure, just honest coverage that fits your budget.
         </p>
 
         <div className="mt-9 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:gap-6">
@@ -685,6 +706,41 @@ function WhyChooseSection() {
               <p className="mt-3 text-sm leading-6 text-slate-600">{text}</p>
             </article>
           ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function CoverageAreaSection() {
+  return (
+    <section className="bg-white px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-4 py-2 text-sm font-bold text-teal-700 ring-1 ring-teal-100">
+              <MapPin className="h-4 w-4" />
+              Statewide Delaware Service
+            </span>
+            <h2 className="font-heading mt-4 text-3xl font-extrabold text-slate-950 sm:text-4xl">
+              Auto Insurance Providers for Drivers Across Delaware
+            </h2>
+            <p className="mt-4 leading-7 text-slate-600">
+              Good Insurance Service helps Delaware drivers compare practical auto insurance options in New Castle
+              County, Kent County, Sussex County, and nearby communities. Whether you need liability coverage,
+              full coverage, SR-22 help, or a multi-vehicle quote, our local team can review your needs and follow up quickly.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {coverageAreas.map((area) => (
+              <span
+                className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-center text-sm font-bold text-slate-700"
+                key={area}
+              >
+                {area}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -1637,6 +1693,7 @@ export default function App() {
         </motion.div>
       </section>
       <TrustBar />
+      <CoverageAreaSection />
       <div id="why-choose-us">
         <WhyChooseSection />
       </div>
