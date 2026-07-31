@@ -62,11 +62,37 @@ const authMarkdown = `# Auth.md
 
 Good Insurance Service accepts public lead submissions through the website quote form and \`POST /api/leads\`.
 
-Administrative APIs are private operational endpoints and are not available for third-party agent registration. They require a server-side \`x-admin-key\` shared only with authorized Good Insurance Service operators.
+Administrative APIs are private operational endpoints. They require a server-side \`x-admin-key\` shared only with authorized Good Insurance Service operators.
 
 ## Agent Registration
 
-Public self-service registration is not available. Authorized integrations are approved out of band by Good Insurance Service.
+This site does not offer public self-service agent registration for protected administrative APIs.
+
+Agents can still interact with the public lead intake experience in two safe ways:
+
+1. Use the website quote form with the user's explicit review and consent.
+2. Read the public API documentation and OpenAPI description to understand the \`POST /api/leads\` payload.
+
+Protected admin access is approved out of band by Good Insurance Service.
+
+## Registration Metadata
+
+- Registration status: \`private_approval_required\`
+- Registration URI: \`mailto:gis@dfgbusiness.com?subject=Agent%20integration%20request\`
+- Authorization server metadata: \`/.well-known/oauth-authorization-server\`
+- Protected resource metadata: \`/.well-known/oauth-protected-resource\`
+- Supported identity types: \`service_auth\`, \`manual_approval\`
+- Supported credential types: \`api-key\`
+- Claim URLs: none for public self-service
+- Revocation URLs: none for public self-service
+- Human contact: \`gis@dfgbusiness.com\`
+
+## Supported Scopes
+
+- \`lead:create\` - submit a quote request with explicit user consent
+- \`lead:read\` - private administrative lead review
+- \`sync:read\` - private administrative sync status review
+- \`sync:write\` - private administrative ERPNext sync retry
 
 Agents can discover public capabilities through:
 
@@ -74,6 +100,7 @@ Agents can discover public capabilities through:
 - \`/openapi.json\`
 - \`/docs/api\`
 - \`/.well-known/agent-skills/index.json\`
+- \`/.well-known/mcp/server-card.json\`
 
 Do not submit real customer data when testing. Use clearly marked test leads.
 `
@@ -923,19 +950,27 @@ app.get('/.well-known/oauth-authorization-server', (_req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=3600')
   return res.json({
     issuer: PUBLIC_ORIGIN,
+    registration_endpoint: 'mailto:gis@dfgbusiness.com?subject=Agent%20integration%20request',
     service_documentation: absoluteUrl('/auth.md'),
-    grant_types_supported: [],
+    grant_types_supported: ['urn:ietf:params:oauth:grant-type:jwt-bearer'],
     response_types_supported: [],
     scopes_supported: ['lead:create', 'lead:read', 'sync:read', 'sync:write'],
-    token_endpoint_auth_methods_supported: [],
+    token_endpoint_auth_methods_supported: ['private_key_jwt', 'client_secret_post', 'none'],
     agent_auth: {
+      skill: absoluteUrl('/auth.md'),
       registration_available: false,
-      register_uri: null,
-      supported_identity_types: [],
+      registration_status: 'private_approval_required',
+      register_uri: 'mailto:gis@dfgbusiness.com?subject=Agent%20integration%20request',
+      supported_identity_types: ['service_auth', 'manual_approval'],
+      identity_types_supported: ['service_auth', 'manual_approval'],
       credential_types: ['api-key'],
+      credential_types_supported: ['api-key'],
       instructions: absoluteUrl('/auth.md'),
       claim_urls: [],
       revocation_urls: [],
+      claim_endpoint: null,
+      revocation_endpoint: null,
+      events_endpoint: null,
     },
   })
 })
