@@ -2,6 +2,7 @@ import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
 import rateLimit from 'express-rate-limit'
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,9 +14,11 @@ const DIST_PATH = path.join(__dirname, 'dist')
 const PORT = parseInt(process.env.PORT || '3005', 10)
 const NODE_ENV = process.env.NODE_ENV || 'development'
 const ERPNEXT_BASE = process.env.ERPNEXT_BASE_URL || process.env.ERPNEXT_URL || ''
+const PUBLIC_ORIGIN = process.env.PUBLIC_ORIGIN || 'https://gis.dfgworld.net'
 const { Pool } = pg
 
 const app = express()
+app.set('trust proxy', true)
 
 const pool = new Pool({
   host: process.env.PGHOST || process.env.PG_HOST || 'localhost',
@@ -34,6 +37,262 @@ const leadLimiter = rateLimit({
   legacyHeaders: false,
   message: { success: false, error: 'Too many submissions. Please try again later.' },
 })
+
+const apiDocsMarkdown = `# Good Insurance Service API
+
+Good Insurance Service provides a public Delaware auto insurance quote intake endpoint and operational endpoints for authorized staff.
+
+## Public endpoints
+
+- \`GET /api/health\` - returns service, database, and ERPNext sync health.
+- \`POST /api/leads\` - accepts quote intake submissions from the 6-step lead capture form.
+
+## Protected endpoints
+
+- \`GET /api/leads\`
+- \`GET /api/sync\`
+- \`POST /api/sync\`
+
+Protected endpoints require the private \`x-admin-key\` header. Public OAuth/OIDC client registration is not available for this site.
+`
+
+const authMarkdown = `# Agent Authentication
+
+Good Insurance Service accepts public lead submissions through the website quote form and \`POST /api/leads\`.
+
+Administrative APIs are private operational endpoints and are not available for third-party agent registration. They require a server-side \`x-admin-key\` shared only with authorized Good Insurance Service operators.
+
+Agents can discover public capabilities through:
+
+- \`/.well-known/api-catalog\`
+- \`/openapi.json\`
+- \`/docs/api\`
+- \`/.well-known/agent-skills/index.json\`
+
+Do not submit real customer data when testing. Use clearly marked test leads.
+`
+
+const agentSkillDocs = {
+  'submit-delaware-auto-insurance-lead': `# Submit Delaware Auto Insurance Lead
+
+Use the Good Insurance Service quote form or \`POST /api/leads\` to submit a Delaware auto insurance quote request.
+
+Required data includes applicant identity, contact details, driver details, insurance status, vehicle details, and driving history.
+`,
+  'check-service-health': `# Check Service Health
+
+Use \`GET /api/health\` to confirm the quote capture service, database connection, and ERPNext configuration status.
+`,
+  'discover-api-catalog': `# Discover API Catalog
+
+Use \`/.well-known/api-catalog\` to discover API descriptions, documentation, health/status endpoints, and authentication notes for Good Insurance Service.
+`,
+}
+
+function absoluteUrl(pathname) {
+  return new URL(pathname, PUBLIC_ORIGIN).toString()
+}
+
+function discoveryLinks() {
+  return [
+    `<${absoluteUrl('/.well-known/api-catalog')}>; rel="api-catalog"; type="application/linkset+json"`,
+    `<${absoluteUrl('/openapi.json')}>; rel="service-desc"; type="application/vnd.oai.openapi+json"`,
+    `<${absoluteUrl('/docs/api')}>; rel="service-doc"; type="text/markdown"`,
+    `<${absoluteUrl('/api/health')}>; rel="status"; type="application/json"`,
+    `<${absoluteUrl('/auth.md')}>; rel="authorization"; type="text/markdown"`,
+    `<${absoluteUrl('/.well-known/oauth-protected-resource')}>; rel="oauth-protected-resource"; type="application/json"`,
+    `<${absoluteUrl('/.well-known/agent-skills/index.json')}>; rel="service-desc"; type="application/json"`,
+    `<${absoluteUrl('/.well-known/mcp/server-card.json')}>; rel="service-desc"; type="application/json"`,
+  ].join(', ')
+}
+
+function setDiscoveryHeaders(res) {
+  res.setHeader('Link', discoveryLinks())
+}
+
+function wantsMarkdown(req) {
+  return String(req.get('accept') || '')
+    .toLowerCase()
+    .split(',')
+    .some((value) => value.trim().startsWith('text/markdown'))
+}
+
+function markdownHome() {
+  return `# Delaware Auto Insurance Quotes | Good Insurance Service
+
+Good Insurance Service helps Delaware drivers compare practical auto insurance options for cars, trucks, SUVs, multi-vehicle households, current insurance changes, SR-22 needs, and new coverage.
+
+## Service Area
+
+Serving New Castle County, Kent County, Sussex County, Wilmington, Dover, Newark, Middletown, Georgetown, Rehoboth Beach, Lewes, and surrounding Delaware communities from 622 E. Basin Rd, Ste A, New Castle DE 19720.
+
+## Contact
+
+- Main phone: (302) 322-5515
+- Text: (302) 648-7858
+- WhatsApp: (302) 522-6002
+- Email: gis@dfgbusiness.com
+
+## Quote Intake
+
+The website includes a secure 6-step auto insurance quote form covering personal details, household drivers, current insurance, vehicles, driving history, and final notes.
+
+## Agent Discovery
+
+- API catalog: ${absoluteUrl('/.well-known/api-catalog')}
+- API docs: ${absoluteUrl('/docs/api')}
+- OpenAPI description: ${absoluteUrl('/openapi.json')}
+- Health endpoint: ${absoluteUrl('/api/health')}
+- Authentication notes: ${absoluteUrl('/auth.md')}
+`
+}
+
+function sendMarkdown(res, markdown) {
+  const tokenEstimate = Math.ceil(markdown.split(/\s+/).filter(Boolean).length * 1.35)
+  res.setHeader('Content-Type', 'text/markdown; charset=utf-8')
+  res.setHeader('x-markdown-tokens', String(tokenEstimate))
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  setDiscoveryHeaders(res)
+  return res.send(markdown)
+}
+
+function openApiDocument() {
+  return {
+    openapi: '3.1.0',
+    info: {
+      title: 'Good Insurance Service Lead Capture API',
+      version: '1.0.0',
+      description: 'Public lead intake and operational health endpoints for Good Insurance Service.',
+    },
+    servers: [{ url: PUBLIC_ORIGIN }],
+    paths: {
+      '/api/health': {
+        get: {
+          summary: 'Check service health',
+          responses: {
+            200: {
+              description: 'Service health status',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      status: { type: 'string' },
+                      db: { type: 'string' },
+                      erpnext: { type: 'string' },
+                      timestamp: { type: 'string', format: 'date-time' },
+                      uptime_s: { type: 'integer' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/api/leads': {
+        post: {
+          summary: 'Submit an auto insurance quote request',
+          description: 'Accepts the same payload submitted by the Good Insurance Service 6-step quote form.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: [
+                    'first_name',
+                    'last_name',
+                    'email',
+                    'phone_home',
+                    'address',
+                    'city',
+                    'state',
+                    'zip',
+                    'drivers_license',
+                    'date_of_birth',
+                    'veh1_year',
+                    'veh1_make',
+                    'veh1_model',
+                  ],
+                  properties: {
+                    first_name: { type: 'string' },
+                    last_name: { type: 'string' },
+                    email: { type: 'string', format: 'email' },
+                    phone_home: { type: 'string' },
+                    phone_cell_work: { type: 'string' },
+                    address: { type: 'string' },
+                    city: { type: 'string' },
+                    state: { type: 'string' },
+                    zip: { type: 'string' },
+                    date_of_birth: { type: 'string', format: 'date' },
+                    drivers_license: { type: 'string' },
+                    drivers_in_household: { type: 'integer' },
+                    coverage_type: { type: 'string', enum: ['full_coverage', 'liability'] },
+                    veh1_year: { type: 'string' },
+                    veh1_make: { type: 'string' },
+                    veh1_model: { type: 'string' },
+                    notes: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: { description: 'Lead accepted' },
+            400: { description: 'Validation failed' },
+            429: { description: 'Rate limited' },
+          },
+        },
+        get: {
+          summary: 'List recent leads',
+          description: 'Private administrative endpoint requiring x-admin-key.',
+          security: [{ AdminKey: [] }],
+          responses: {
+            200: { description: 'Lead list' },
+            401: { description: 'Unauthorized' },
+          },
+        },
+      },
+    },
+    components: {
+      securitySchemes: {
+        AdminKey: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'x-admin-key',
+        },
+      },
+    },
+  }
+}
+
+function apiCatalogLinkset() {
+  return {
+    linkset: [
+      {
+        anchor: absoluteUrl('/api'),
+        'service-desc': [{ href: absoluteUrl('/openapi.json'), type: 'application/vnd.oai.openapi+json' }],
+        'service-doc': [{ href: absoluteUrl('/docs/api'), type: 'text/markdown' }],
+        status: [{ href: absoluteUrl('/api/health'), type: 'application/json' }],
+        authorization: [{ href: absoluteUrl('/auth.md'), type: 'text/markdown' }],
+      },
+    ],
+  }
+}
+
+function agentSkillsIndex() {
+  return {
+    $schema: 'https://agentskills.io/schemas/agent-skills-index-v0.2.json',
+    skills: Object.entries(agentSkillDocs).map(([name, body]) => ({
+      name,
+      type: 'markdown',
+      description: body.split('\n\n')[1].replace(/\s+/g, ' ').trim(),
+      url: absoluteUrl(`/.well-known/agent-skills/${name}.md`),
+      sha256: crypto.createHash('sha256').update(body).digest('hex'),
+    })),
+  }
+}
 
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || 'http://localhost:5173' }))
 app.use(express.json({ limit: '1mb' }))
@@ -606,6 +865,122 @@ app.get(
     })
   }),
 )
+
+app.get('/', (req, res, next) => {
+  setDiscoveryHeaders(res)
+  if (wantsMarkdown(req)) {
+    return sendMarkdown(res, markdownHome())
+  }
+
+  const indexPath = path.join(DIST_PATH, 'index.html')
+  if (fs.existsSync(indexPath)) {
+    setDiscoveryHeaders(res)
+    res.setHeader('Cache-Control', 'no-cache')
+    return res.sendFile(indexPath)
+  }
+
+  return next()
+})
+
+app.get('/docs/api', (_req, res) => sendMarkdown(res, apiDocsMarkdown))
+
+app.get('/auth.md', (_req, res) => sendMarkdown(res, authMarkdown))
+
+app.get('/openapi.json', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  return res.type('application/vnd.oai.openapi+json').json(openApiDocument())
+})
+
+app.get('/.well-known/api-catalog', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  return res.type('application/linkset+json').send(JSON.stringify(apiCatalogLinkset()))
+})
+
+app.get('/.well-known/oauth-protected-resource', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  return res.json({
+    resource: PUBLIC_ORIGIN,
+    scopes_supported: ['lead:create', 'lead:read', 'sync:read', 'sync:write'],
+    bearer_methods_supported: ['header'],
+    resource_documentation: absoluteUrl('/docs/api'),
+    authorization_details_types_supported: ['api-key'],
+    note:
+      'Public OAuth/OIDC client registration is not available. Protected administrative APIs require a private x-admin-key issued out of band.',
+  })
+})
+
+app.get('/.well-known/oauth-authorization-server', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  return res.json({
+    issuer: PUBLIC_ORIGIN,
+    service_documentation: absoluteUrl('/auth.md'),
+    grant_types_supported: [],
+    response_types_supported: [],
+    scopes_supported: ['lead:create', 'lead:read', 'sync:read', 'sync:write'],
+    token_endpoint_auth_methods_supported: [],
+    agent_auth: {
+      registration_available: false,
+      register_uri: null,
+      supported_identity_types: [],
+      credential_types: ['api-key'],
+      instructions: absoluteUrl('/auth.md'),
+    },
+  })
+})
+
+app.get('/.well-known/openid-configuration', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  return res.json({
+    issuer: PUBLIC_ORIGIN,
+    service_documentation: absoluteUrl('/auth.md'),
+    response_types_supported: [],
+    subject_types_supported: [],
+    id_token_signing_alg_values_supported: [],
+    claims_supported: [],
+    note: 'OpenID Connect login is not available for public agents on this lead capture site.',
+  })
+})
+
+app.get('/.well-known/mcp/server-card.json', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  return res.json({
+    serverInfo: {
+      name: 'Good Insurance Service Lead Capture',
+      version: '1.0.0',
+      description: 'Discovery metadata for the Good Insurance Service Delaware auto insurance lead capture site.',
+    },
+    transports: [],
+    capabilities: {
+      resources: [
+        { name: 'API Catalog', uri: absoluteUrl('/.well-known/api-catalog') },
+        { name: 'API Documentation', uri: absoluteUrl('/docs/api') },
+        { name: 'OpenAPI Description', uri: absoluteUrl('/openapi.json') },
+      ],
+      tools: [],
+    },
+    note: 'No live MCP transport is exposed. Use the public API catalog and OpenAPI description for discovery.',
+  })
+})
+
+app.get('/.well-known/agent-skills/index.json', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  return res.json(agentSkillsIndex())
+})
+
+app.get('/.well-known/agent-skills/:skillName.md', (req, res) => {
+  const body = agentSkillDocs[req.params.skillName]
+  if (!body) {
+    return res.status(404).type('text/plain').send('Agent skill not found')
+  }
+  return sendMarkdown(res, body)
+})
 
 app.use(
   express.static(DIST_PATH, {
