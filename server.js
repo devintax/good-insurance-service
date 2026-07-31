@@ -56,11 +56,17 @@ Good Insurance Service provides a public Delaware auto insurance quote intake en
 Protected endpoints require the private \`x-admin-key\` header. Public OAuth/OIDC client registration is not available for this site.
 `
 
-const authMarkdown = `# Agent Authentication
+const authMarkdown = `# Auth.md
+
+## Agent Authentication
 
 Good Insurance Service accepts public lead submissions through the website quote form and \`POST /api/leads\`.
 
 Administrative APIs are private operational endpoints and are not available for third-party agent registration. They require a server-side \`x-admin-key\` shared only with authorized Good Insurance Service operators.
+
+## Agent Registration
+
+Public self-service registration is not available. Authorized integrations are approved out of band by Good Insurance Service.
 
 Agents can discover public capabilities through:
 
@@ -928,6 +934,8 @@ app.get('/.well-known/oauth-authorization-server', (_req, res) => {
       supported_identity_types: [],
       credential_types: ['api-key'],
       instructions: absoluteUrl('/auth.md'),
+      claim_urls: [],
+      revocation_urls: [],
     },
   })
 })
