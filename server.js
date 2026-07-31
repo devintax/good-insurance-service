@@ -56,6 +56,13 @@ Good Insurance Service provides a public Delaware auto insurance quote intake en
 Protected endpoints require the private \`x-admin-key\` header. Public OAuth/OIDC client registration is not available for this site.
 `
 
+const agentRegistrationUri = absoluteUrl('/agent/register')
+const agentIdentityEndpoint = absoluteUrl('/agent/identity')
+const agentClaimEndpoint = absoluteUrl('/agent/identity/claim')
+const agentEventsEndpoint = absoluteUrl('/agent/events')
+const oauthTokenEndpoint = absoluteUrl('/oauth2/token')
+const oauthRevocationEndpoint = absoluteUrl('/oauth2/revoke')
+
 const authMarkdown = `# Auth.md
 
 ## Agent Authentication
@@ -75,10 +82,24 @@ Agents can still interact with the public lead intake experience in two safe way
 
 Protected admin access is approved out of band by Good Insurance Service.
 
+## Agent Registration Flow
+
+1. Discover this file at \`${absoluteUrl('/auth.md')}\`.
+2. Read protected resource metadata at \`${absoluteUrl('/.well-known/oauth-protected-resource')}\`.
+3. Read authorization server metadata at \`${absoluteUrl('/.well-known/oauth-authorization-server')}\`.
+4. Submit an integration request at \`${agentRegistrationUri}\`.
+5. Wait for Good Insurance Service to approve and issue private credentials out of band.
+6. Use approved credentials only for the scopes explicitly granted.
+
 ## Registration Metadata
 
 - Registration status: \`private_approval_required\`
-- Registration URI: \`mailto:gis@dfgbusiness.com?subject=Agent%20integration%20request\`
+- Registration URI: \`${agentRegistrationUri}\`
+- Identity endpoint: \`${agentIdentityEndpoint}\`
+- Claim endpoint: \`${agentClaimEndpoint}\`
+- Event endpoint: \`${agentEventsEndpoint}\`
+- Token endpoint: \`${oauthTokenEndpoint}\`
+- Revocation endpoint: \`${oauthRevocationEndpoint}\`
 - Authorization server metadata: \`${absoluteUrl('/.well-known/oauth-authorization-server')}\`
 - Protected resource metadata: \`${absoluteUrl('/.well-known/oauth-protected-resource')}\`
 - Protected resource identifier: \`${PUBLIC_ORIGIN}\`
@@ -135,6 +156,7 @@ function discoveryLinks() {
     `<${absoluteUrl('/docs/api')}>; rel="service-doc"; type="text/markdown"`,
     `<${absoluteUrl('/api/health')}>; rel="status"; type="application/json"`,
     `<${absoluteUrl('/auth.md')}>; rel="authorization"; type="text/markdown"`,
+    `<${agentRegistrationUri}>; rel="authorization"; type="application/json"`,
     `<${absoluteUrl('/.well-known/oauth-protected-resource')}>; rel="oauth-protected-resource"; type="application/json"`,
     `<${absoluteUrl('/.well-known/agent-skills/index.json')}>; rel="service-desc"; type="application/json"`,
     `<${absoluteUrl('/.well-known/mcp/server-card.json')}>; rel="service-desc"; type="application/json"`,
@@ -938,6 +960,90 @@ app.get('/docs/api', (_req, res) => sendMarkdown(res, apiDocsMarkdown))
 
 app.get('/auth.md', (_req, res) => sendMarkdown(res, authMarkdown))
 
+app.get('/agent/register', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  return res.json({
+    registration_status: 'private_approval_required',
+    registration_available: false,
+    service: 'Good Insurance Service Lead Capture API',
+    instructions:
+      'Public self-service credential issuance is not available. Agents may request integration review for protected operational APIs.',
+    contact: {
+      email: 'gis@dfgbusiness.com',
+      subject: 'Agent integration request',
+    },
+    metadata: {
+      auth_md: absoluteUrl('/auth.md'),
+      oauth_authorization_server: absoluteUrl('/.well-known/oauth-authorization-server'),
+      oauth_protected_resource: absoluteUrl('/.well-known/oauth-protected-resource'),
+      openapi: absoluteUrl('/openapi.json'),
+    },
+    supported_identity_types: ['service_auth', 'manual_approval'],
+    credential_types_supported: ['api-key'],
+    scopes_supported: ['lead:create', 'lead:read', 'sync:read', 'sync:write'],
+  })
+})
+
+app.post('/agent/register', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'no-store')
+  return res.status(202).json({
+    accepted: true,
+    registration_status: 'manual_review_required',
+    message:
+      'Agent registration requests are reviewed manually by Good Insurance Service. Email gis@dfgbusiness.com with your organization, use case, callback URLs, and requested scopes.',
+  })
+})
+
+app.post('/agent/identity', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'no-store')
+  return res.status(501).json({
+    error: 'manual_approval_required',
+    message:
+      'Automated identity assertion is not enabled. Protected API credentials are issued manually after Good Insurance Service review.',
+    register_uri: agentRegistrationUri,
+  })
+})
+
+app.post('/agent/identity/claim', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'no-store')
+  return res.status(501).json({
+    error: 'manual_approval_required',
+    message: 'Automated claim ceremonies are not enabled for this lead capture site.',
+    register_uri: agentRegistrationUri,
+  })
+})
+
+app.post('/agent/events', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'no-store')
+  return res.status(204).end()
+})
+
+app.post('/oauth2/token', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'no-store')
+  return res.status(501).json({
+    error: 'unsupported_grant_type',
+    error_description:
+      'Automated OAuth token issuance is not enabled. Protected APIs require private credentials issued out of band.',
+    register_uri: agentRegistrationUri,
+  })
+})
+
+app.post('/oauth2/revoke', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'no-store')
+  return res.status(200).json({
+    revoked: false,
+    message: 'Credential revocation is handled manually by Good Insurance Service operations.',
+    contact: 'gis@dfgbusiness.com',
+  })
+})
+
 app.get('/openapi.json', (_req, res) => {
   setDiscoveryHeaders(res)
   res.setHeader('Cache-Control', 'public, max-age=3600')
@@ -970,28 +1076,37 @@ app.get('/.well-known/oauth-authorization-server', (_req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=3600')
   return res.json({
     issuer: PUBLIC_ORIGIN,
-    registration_endpoint: 'mailto:gis@dfgbusiness.com?subject=Agent%20integration%20request',
+    registration_endpoint: agentRegistrationUri,
     service_documentation: absoluteUrl('/auth.md'),
-    grant_types_supported: ['urn:ietf:params:oauth:grant-type:jwt-bearer'],
+    token_endpoint: oauthTokenEndpoint,
+    revocation_endpoint: oauthRevocationEndpoint,
+    grant_types_supported: [
+      'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      'urn:workos:agent-auth:grant-type:claim',
+    ],
     response_types_supported: [],
     scopes_supported: ['lead:create', 'lead:read', 'sync:read', 'sync:write'],
     protected_resources: [PUBLIC_ORIGIN],
     token_endpoint_auth_methods_supported: ['private_key_jwt', 'client_secret_post', 'none'],
     agent_auth: {
       skill: absoluteUrl('/auth.md'),
+      registration_endpoint: agentRegistrationUri,
+      register_uri: agentRegistrationUri,
+      identity_endpoint: agentIdentityEndpoint,
+      claim_endpoint: agentClaimEndpoint,
+      events_endpoint: agentEventsEndpoint,
+      token_endpoint: oauthTokenEndpoint,
+      revocation_endpoint: oauthRevocationEndpoint,
       registration_available: false,
       registration_status: 'private_approval_required',
-      register_uri: 'mailto:gis@dfgbusiness.com?subject=Agent%20integration%20request',
       supported_identity_types: ['service_auth', 'manual_approval'],
       identity_types_supported: ['service_auth', 'manual_approval'],
       credential_types: ['api-key'],
       credential_types_supported: ['api-key'],
       instructions: absoluteUrl('/auth.md'),
-      claim_urls: [],
-      revocation_urls: [],
-      claim_endpoint: null,
-      revocation_endpoint: null,
-      events_endpoint: null,
+      claim_urls: [agentClaimEndpoint],
+      revocation_urls: [oauthRevocationEndpoint],
+      contact: 'gis@dfgbusiness.com',
     },
   })
 })
