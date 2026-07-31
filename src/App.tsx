@@ -21,7 +21,6 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Controller,
@@ -152,17 +151,17 @@ const faqs = [
   {
     question: 'How do I get an auto insurance quote in Delaware?',
     answer:
-      'Complete the quote form with your driver, vehicle, current insurance, and driving history details. A Delaware insurance specialist reviews your request and follows up with coverage options.',
+      'Complete the quote form with your driver, vehicle, current insurance, and driving history details. A Delaware insurance specialist reviews requests from Dover, Wilmington, New Castle, Newark, Sussex County, and statewide communities.',
   },
   {
     question: 'What is the minimum car insurance required in Delaware?',
     answer:
-      'Delaware drivers must carry state-required liability coverage and personal injury protection. We can help you compare options that meet Delaware requirements and fit your budget.',
+      'Delaware drivers in Wilmington, Dover, New Castle, Newark, Sussex County, and statewide communities must carry state-required liability coverage and personal injury protection. We can help you compare options that meet Delaware requirements and fit your budget.',
   },
   {
     question: 'Can you help with SR-22 insurance in Delaware?',
     answer:
-      'Yes. If you need SR-22 or high-risk auto insurance help in Delaware, include your driving history in the quote form so our team can review available options.',
+      'Yes. If you need SR-22 or high-risk auto insurance help in Delaware, including Dover, Wilmington, New Castle, Newark, or Sussex County, include your driving history in the quote form so our team can review available options.',
   },
   {
     question: 'Do you serve all of Delaware?',
@@ -172,7 +171,7 @@ const faqs = [
   {
     question: 'Can I compare liability and full coverage auto insurance in Delaware?',
     answer:
-      'Yes. We can help Delaware drivers compare liability and full coverage options based on vehicle, driver, lien holder, and household details.',
+      'Yes. We can help Delaware drivers in Dover, Wilmington, New Castle, Newark, Sussex County, and nearby areas compare liability and full coverage options based on vehicle, driver, lien holder, and household details.',
   },
   {
     question: 'Can I get coverage for more than one vehicle?',
@@ -688,7 +687,7 @@ function TrustBar() {
 
 function WhyChooseSection() {
   return (
-    <section className="bg-white px-4 py-12 sm:px-6 sm:py-16">
+    <section className="defer-paint bg-white px-4 py-12 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
           <h2 className="font-heading text-3xl font-extrabold text-slate-950 sm:text-4xl">
@@ -714,7 +713,7 @@ function WhyChooseSection() {
 
 function CoverageAreaSection() {
   return (
-    <section className="bg-white px-4 py-12 sm:px-6 sm:py-16">
+    <section className="defer-paint bg-white px-4 py-12 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-6xl">
         <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div>
@@ -749,7 +748,7 @@ function CoverageAreaSection() {
 
 function TestimonialsSection() {
   return (
-    <section className="bg-slate-50 px-4 py-12 sm:px-6 sm:py-16">
+    <section className="defer-paint bg-slate-50 px-4 py-12 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-6xl">
         <h2 className="font-heading text-center text-3xl font-extrabold text-slate-950 sm:text-4xl">
           What Our Customers Say
@@ -782,7 +781,7 @@ function TestimonialsSection() {
 
 function FAQSection() {
   return (
-    <section className="bg-white px-4 py-12 sm:px-6 sm:py-16" id="faq">
+    <section className="defer-paint bg-white px-4 py-12 sm:px-6 sm:py-16" id="faq">
       <div className="mx-auto max-w-4xl">
         <div className="text-center">
           <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 ring-1 ring-blue-100">
@@ -828,39 +827,28 @@ function SuccessScreen({
   const displayName = firstName || 'friend'
 
   return (
-    <motion.div
-      animate={{ opacity: 1, y: 0 }}
-      className="px-5 py-10 text-center sm:px-8 sm:py-14"
-      initial={{ opacity: 0, y: 18 }}
-      transition={{ duration: 0.35 }}
-    >
+    <div className="animate-enter-up px-5 py-10 text-center sm:px-8 sm:py-14">
       <div className="relative mx-auto flex h-24 w-24 items-center justify-center">
         <span className="absolute h-24 w-24 animate-ping rounded-full bg-emerald-200 opacity-40" />
-        <motion.svg className="relative h-24 w-24" fill="none" viewBox="0 0 96 96">
-          <motion.circle
-            animate={{ pathLength: 1 }}
-            className="text-emerald-500"
+        <svg className="relative h-24 w-24" fill="none" viewBox="0 0 96 96">
+          <circle
+            className="success-circle text-emerald-500"
             cx="48"
             cy="48"
-            initial={{ pathLength: 0 }}
             r="40"
             stroke="currentColor"
             strokeLinecap="round"
             strokeWidth="8"
-            transition={{ duration: 0.55, ease: 'easeOut' }}
           />
-          <motion.path
-            animate={{ pathLength: 1 }}
-            className="text-emerald-600"
+          <path
+            className="success-check text-emerald-600"
             d="M30 49.5 42.5 62 68 36"
-            initial={{ pathLength: 0 }}
             stroke="currentColor"
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="8"
-            transition={{ delay: 0.35, duration: 0.45, ease: 'easeOut' }}
           />
-        </motion.svg>
+        </svg>
       </div>
 
       <h2 className="font-heading mt-6 text-3xl font-extrabold text-slate-950 sm:text-4xl">Thank You, {displayName}!</h2>
@@ -930,7 +918,7 @@ function SuccessScreen({
           <p className="text-xs font-semibold text-slate-400">Closing automatically in 5 seconds...</p>
         </div>
       ) : null}
-    </motion.div>
+    </div>
   )
 }
 
@@ -1237,13 +1225,7 @@ export default function App() {
             </button>
           </div>
         ) : null}
-        <motion.div
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-auto max-w-6xl"
-          initial={{ opacity: 0, y: 24 }}
-          ref={formTopRef}
-          transition={{ duration: 0.45 }}
-        >
+        <div className="animate-enter-up mx-auto max-w-6xl" ref={formTopRef}>
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
           <div className="bg-[var(--primary-blue)] px-6 py-5 text-white">
             <h2 className="font-heading text-2xl font-bold">
@@ -1294,7 +1276,7 @@ export default function App() {
           <form onSubmit={handleSubmit(submitWithErrorHandling)}>
             <fieldset className="p-6" disabled={isSubmitting}>
               {step === 1 ? (
-                <motion.div animate={{ opacity: 1, x: 0 }} className="space-y-5" initial={{ opacity: 0, x: 16 }}>
+                <div className="animate-step-in space-y-5">
                   <div className="grid gap-4 md:grid-cols-2">
                     <TextInput errors={errors} label="First Name" name="first_name" register={register} required />
                     <TextInput errors={errors} label="Last Name" name="last_name" register={register} required />
@@ -1386,11 +1368,11 @@ export default function App() {
                       ]}
                     />
                   </div>
-                </motion.div>
+                </div>
               ) : null}
 
               {step === 2 ? (
-                <motion.div animate={{ opacity: 1, x: 0 }} className="space-y-5" initial={{ opacity: 0, x: 16 }}>
+                <div className="animate-step-in space-y-5">
                   <BooleanRadio
                     control={control}
                     errors={errors}
@@ -1509,11 +1491,11 @@ export default function App() {
                       </section>
                     ))}
                   </section>
-                </motion.div>
+                </div>
               ) : null}
 
               {step === 3 ? (
-                <motion.div animate={{ opacity: 1, x: 0 }} className="space-y-5" initial={{ opacity: 0, x: 16 }}>
+                <div className="animate-step-in space-y-5">
                   <BooleanRadio
                     control={control}
                     errors={errors}
@@ -1548,11 +1530,11 @@ export default function App() {
                   {values.has_lien_holder ? (
                     <TextInput errors={errors} label="Lien Holder Name" name="lien_holder_name" register={register} required />
                   ) : null}
-                </motion.div>
+                </div>
               ) : null}
 
               {step === 4 ? (
-                <motion.div animate={{ opacity: 1, x: 0 }} className="space-y-5" initial={{ opacity: 0, x: 16 }}>
+                <div className="animate-step-in space-y-5">
                   <VehicleFields errors={errors} prefix="veh1" register={register} required title="Vehicle 1" years={years} />
                   {showVehicle2 ? (
                     <VehicleFields errors={errors} prefix="veh2" register={register} title="Vehicle 2" years={years} />
@@ -1579,11 +1561,11 @@ export default function App() {
                   {showVehicle3 ? (
                     <VehicleFields errors={errors} prefix="veh3" register={register} title="Vehicle 3" years={years} />
                   ) : null}
-                </motion.div>
+                </div>
               ) : null}
 
               {step === 5 ? (
-                <motion.div animate={{ opacity: 1, x: 0 }} className="space-y-5" initial={{ opacity: 0, x: 16 }}>
+                <div className="animate-step-in space-y-5">
                   <BooleanRadio
                     control={control}
                     errors={errors}
@@ -1622,11 +1604,11 @@ export default function App() {
                       ) : null}
                     </section>
                   ) : null}
-                </motion.div>
+                </div>
               ) : null}
 
               {step === 6 ? (
-                <motion.div animate={{ opacity: 1, x: 0 }} className="space-y-5" initial={{ opacity: 0, x: 16 }}>
+                <div className="animate-step-in space-y-5">
                   <TextInput
                     errors={errors}
                     label="How did you hear about us?"
@@ -1646,7 +1628,7 @@ export default function App() {
                     <p className="mt-2 text-right text-sm text-slate-500">{notes.length}/500</p>
                   </div>
                   <ReviewSummary data={values} />
-                </motion.div>
+                </div>
               ) : null}
 
               {submitError ? (
@@ -1690,7 +1672,7 @@ export default function App() {
           </form>
           )}
         </section>
-        </motion.div>
+        </div>
       </section>
       <TrustBar />
       <CoverageAreaSection />

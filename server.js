@@ -607,7 +607,28 @@ app.get(
   }),
 )
 
-app.use(express.static(DIST_PATH))
+app.use(
+  express.static(DIST_PATH, {
+    etag: true,
+    maxAge: 0,
+    setHeaders(res, servedPath) {
+      const normalizedPath = servedPath.replaceAll('\\', '/')
+      if (normalizedPath.includes('/assets/')) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+        return
+      }
+      if (/\.(?:svg|png|jpg|jpeg|webp|ico|woff2?)$/i.test(normalizedPath)) {
+        res.setHeader('Cache-Control', 'public, max-age=604800')
+        return
+      }
+      if (/\.(?:xml|txt|webmanifest)$/i.test(normalizedPath)) {
+        res.setHeader('Cache-Control', 'public, max-age=3600')
+        return
+      }
+      res.setHeader('Cache-Control', 'no-cache')
+    },
+  }),
+)
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
@@ -616,6 +637,7 @@ app.use((req, res, next) => {
 
   const indexPath = path.join(DIST_PATH, 'index.html')
   if (fs.existsSync(indexPath)) {
+    res.setHeader('Cache-Control', 'no-cache')
     return res.sendFile(indexPath)
   }
 
