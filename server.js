@@ -79,8 +79,10 @@ Protected admin access is approved out of band by Good Insurance Service.
 
 - Registration status: \`private_approval_required\`
 - Registration URI: \`mailto:gis@dfgbusiness.com?subject=Agent%20integration%20request\`
-- Authorization server metadata: \`/.well-known/oauth-authorization-server\`
-- Protected resource metadata: \`/.well-known/oauth-protected-resource\`
+- Authorization server metadata: \`${absoluteUrl('/.well-known/oauth-authorization-server')}\`
+- Protected resource metadata: \`${absoluteUrl('/.well-known/oauth-protected-resource')}\`
+- Protected resource identifier: \`${PUBLIC_ORIGIN}\`
+- Authorization servers: \`${PUBLIC_ORIGIN}\`
 - Supported identity types: \`service_auth\`, \`manual_approval\`
 - Supported credential types: \`api-key\`
 - Claim URLs: none for public self-service
@@ -136,11 +138,28 @@ function discoveryLinks() {
     `<${absoluteUrl('/.well-known/oauth-protected-resource')}>; rel="oauth-protected-resource"; type="application/json"`,
     `<${absoluteUrl('/.well-known/agent-skills/index.json')}>; rel="service-desc"; type="application/json"`,
     `<${absoluteUrl('/.well-known/mcp/server-card.json')}>; rel="service-desc"; type="application/json"`,
+    `<${absoluteUrl('/.well-known/agents-index.json')}>; rel="service-desc"; type="application/json"`,
+    `<${absoluteUrl('/.well-known/agent-card.json')}>; rel="service-desc"; type="application/json"`,
   ].join(', ')
 }
 
 function setDiscoveryHeaders(res) {
   res.setHeader('Link', discoveryLinks())
+}
+
+function protectedResourceMetadata() {
+  return {
+    resource: PUBLIC_ORIGIN,
+    resource_name: 'Good Insurance Service Lead Capture API',
+    authorization_servers: [PUBLIC_ORIGIN],
+    scopes_supported: ['lead:create', 'lead:read', 'sync:read', 'sync:write'],
+    bearer_methods_supported: ['header'],
+    resource_documentation: absoluteUrl('/docs/api'),
+    authorization_details_types_supported: ['api-key'],
+    service_documentation: absoluteUrl('/auth.md'),
+    note:
+      'Public OAuth/OIDC client registration is not available. Protected administrative APIs require a private x-admin-key issued out of band.',
+  }
 }
 
 function wantsMarkdown(req) {
@@ -934,14 +953,15 @@ app.get('/.well-known/api-catalog', (_req, res) => {
 app.get('/.well-known/oauth-protected-resource', (_req, res) => {
   setDiscoveryHeaders(res)
   res.setHeader('Cache-Control', 'public, max-age=3600')
+  return res.json(protectedResourceMetadata())
+})
+
+app.get('/.well-known/oauth-protected-resource/api', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'public, max-age=3600')
   return res.json({
-    resource: PUBLIC_ORIGIN,
-    scopes_supported: ['lead:create', 'lead:read', 'sync:read', 'sync:write'],
-    bearer_methods_supported: ['header'],
-    resource_documentation: absoluteUrl('/docs/api'),
-    authorization_details_types_supported: ['api-key'],
-    note:
-      'Public OAuth/OIDC client registration is not available. Protected administrative APIs require a private x-admin-key issued out of band.',
+    ...protectedResourceMetadata(),
+    resource: absoluteUrl('/api'),
   })
 })
 
@@ -955,6 +975,7 @@ app.get('/.well-known/oauth-authorization-server', (_req, res) => {
     grant_types_supported: ['urn:ietf:params:oauth:grant-type:jwt-bearer'],
     response_types_supported: [],
     scopes_supported: ['lead:create', 'lead:read', 'sync:read', 'sync:write'],
+    protected_resources: [PUBLIC_ORIGIN],
     token_endpoint_auth_methods_supported: ['private_key_jwt', 'client_secret_post', 'none'],
     agent_auth: {
       skill: absoluteUrl('/auth.md'),
@@ -1008,6 +1029,54 @@ app.get('/.well-known/mcp/server-card.json', (_req, res) => {
       tools: [],
     },
     note: 'No live MCP transport is exposed. Use the public API catalog and OpenAPI description for discovery.',
+  })
+})
+
+app.get('/.well-known/agents-index.json', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  return res.json({
+    agents: [
+      {
+        id: 'good-insurance-service-leads',
+        name: 'Good Insurance Service Lead Capture',
+        fqdn: `_index._agents.${new URL(PUBLIC_ORIGIN).hostname}`,
+        protocol: 'https',
+        endpoint: absoluteUrl('/'),
+        agent_card: absoluteUrl('/.well-known/agent-card.json'),
+        capabilities: ['delaware-auto-insurance-quotes', 'lead-intake-guidance', 'contact-options'],
+      },
+    ],
+  })
+})
+
+app.get('/.well-known/agent-card.json', (_req, res) => {
+  setDiscoveryHeaders(res)
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  return res.json({
+    name: 'Good Insurance Service Lead Capture',
+    description:
+      'Public Delaware auto insurance quote intake and discovery metadata for Good Insurance Service.',
+    url: PUBLIC_ORIGIN,
+    provider: {
+      organization: 'Good Insurance Service',
+      url: PUBLIC_ORIGIN,
+    },
+    skills: [
+      {
+        id: 'delaware-auto-insurance-quotes',
+        name: 'Delaware Auto Insurance Quote Intake',
+        description:
+          'Helps users understand and complete a Delaware auto insurance quote request with explicit user consent.',
+        tags: ['auto-insurance', 'delaware', 'lead-capture'],
+      },
+      {
+        id: 'contact-options',
+        name: 'Good Insurance Service Contact Options',
+        description: 'Provides public phone, text, WhatsApp, email, and office contact information.',
+        tags: ['contact', 'customer-service'],
+      },
+    ],
   })
 })
 
