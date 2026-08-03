@@ -105,9 +105,13 @@ Protected admin access is approved out of band by Good Insurance Service.
 - Protected resource identifier: \`${PUBLIC_ORIGIN}\`
 - Authorization servers: \`${PUBLIC_ORIGIN}\`
 - Supported identity types: \`service_auth\`, \`manual_approval\`
-- Supported credential types: \`api-key\`
-- Claim URLs: none for public self-service
-- Revocation URLs: none for public self-service
+- Supported agent identity types: \`anonymous\`, \`identity_assertion\`, \`service_auth\`
+- Supported assertion types: \`urn:ietf:params:oauth:token-type:id-jag\`, \`verified_email\`
+- Supported credential types: \`api-key\`, \`bearer_token\`
+- Anonymous registration method: request manual review through \`${agentRegistrationUri}\`, then use \`${agentClaimEndpoint}\` for a claim ceremony if approved.
+- Identity assertion method: submit an approved identity assertion to \`${agentIdentityEndpoint}\`; Good Insurance Service reviews and issues credentials out of band.
+- Claim URI: \`${agentClaimEndpoint}\`
+- Revocation URI: \`${oauthRevocationEndpoint}\`
 - Human contact: \`gis@dfgbusiness.com\`
 
 ## Supported Scopes
@@ -980,8 +984,11 @@ app.get('/agent/register', (_req, res) => {
       openapi: absoluteUrl('/openapi.json'),
     },
     supported_identity_types: ['service_auth', 'manual_approval'],
-    credential_types_supported: ['api-key'],
+    identity_types_supported: ['anonymous', 'identity_assertion', 'service_auth'],
+    credential_types_supported: ['api-key', 'bearer_token'],
     scopes_supported: ['lead:create', 'lead:read', 'sync:read', 'sync:write'],
+    claim_uri: agentClaimEndpoint,
+    revocation_uri: oauthRevocationEndpoint,
   })
 })
 
@@ -1076,6 +1083,8 @@ app.get('/.well-known/oauth-authorization-server', (_req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=3600')
   return res.json({
     issuer: PUBLIC_ORIGIN,
+    resource: PUBLIC_ORIGIN,
+    authorization_servers: [PUBLIC_ORIGIN],
     registration_endpoint: agentRegistrationUri,
     service_documentation: absoluteUrl('/auth.md'),
     token_endpoint: oauthTokenEndpoint,
@@ -1087,6 +1096,7 @@ app.get('/.well-known/oauth-authorization-server', (_req, res) => {
     response_types_supported: [],
     scopes_supported: ['lead:create', 'lead:read', 'sync:read', 'sync:write'],
     protected_resources: [PUBLIC_ORIGIN],
+    bearer_methods_supported: ['header'],
     token_endpoint_auth_methods_supported: ['private_key_jwt', 'client_secret_post', 'none'],
     agent_auth: {
       skill: absoluteUrl('/auth.md'),
@@ -1094,18 +1104,33 @@ app.get('/.well-known/oauth-authorization-server', (_req, res) => {
       register_uri: agentRegistrationUri,
       identity_endpoint: agentIdentityEndpoint,
       claim_endpoint: agentClaimEndpoint,
+      claim_uri: agentClaimEndpoint,
       events_endpoint: agentEventsEndpoint,
       token_endpoint: oauthTokenEndpoint,
       revocation_endpoint: oauthRevocationEndpoint,
+      revocation_uri: oauthRevocationEndpoint,
       registration_available: false,
       registration_status: 'private_approval_required',
-      supported_identity_types: ['service_auth', 'manual_approval'],
-      identity_types_supported: ['service_auth', 'manual_approval'],
-      credential_types: ['api-key'],
-      credential_types_supported: ['api-key'],
+      supported_identity_types: ['anonymous', 'identity_assertion', 'service_auth'],
+      identity_types_supported: ['anonymous', 'identity_assertion', 'service_auth'],
+      credential_types: ['api-key', 'bearer_token'],
+      credential_types_supported: ['api-key', 'bearer_token'],
+      anonymous: {
+        credential_types_supported: ['api-key', 'bearer_token'],
+        claim_uri: agentClaimEndpoint,
+      },
+      identity_assertion: {
+        assertion_types_supported: ['urn:ietf:params:oauth:token-type:id-jag', 'verified_email'],
+        credential_types_supported: ['api-key', 'bearer_token'],
+        claim_uri: agentClaimEndpoint,
+        revocation_uri: oauthRevocationEndpoint,
+      },
       instructions: absoluteUrl('/auth.md'),
       claim_urls: [agentClaimEndpoint],
       revocation_urls: [oauthRevocationEndpoint],
+      events_supported: [
+        'https://schemas.workos.com/events/agent/auth/identity/assertion/revoked',
+      ],
       contact: 'gis@dfgbusiness.com',
     },
   })
